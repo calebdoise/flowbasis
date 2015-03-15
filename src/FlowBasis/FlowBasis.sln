@@ -1,11 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30501.0
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowBasis.Json", "FlowBasis.Json\FlowBasis.Json.csproj", "{DDE7365A-D677-4D3D-AAF5-613E08A0DE73}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowBasisJsonUnitTests", "FlowBasisJsonUnitTests\FlowBasisJsonUnitTests.csproj", "{0A094FCB-D99C-4057-94F4-29786CDE42E0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowBasis.Crypto", "FlowBasis.Crypto\FlowBasis.Crypto.csproj", "{C194C9BE-541F-4C50-97A6-6E42907702E9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowBasisCryptoUnitTests", "FlowBasisCryptoUnitTests\FlowBasisCryptoUnitTests.csproj", "{7FE0A957-C0BB-4C2C-BB44-5EAA16E62A01}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,14 @@ Global
 		{0A094FCB-D99C-4057-94F4-29786CDE42E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A094FCB-D99C-4057-94F4-29786CDE42E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0A094FCB-D99C-4057-94F4-29786CDE42E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C194C9BE-541F-4C50-97A6-6E42907702E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C194C9BE-541F-4C50-97A6-6E42907702E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C194C9BE-541F-4C50-97A6-6E42907702E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C194C9BE-541F-4C50-97A6-6E42907702E9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7FE0A957-C0BB-4C2C-BB44-5EAA16E62A01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7FE0A957-C0BB-4C2C-BB44-5EAA16E62A01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7FE0A957-C0BB-4C2C-BB44-5EAA16E62A01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7FE0A957-C0BB-4C2C-BB44-5EAA16E62A01}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
