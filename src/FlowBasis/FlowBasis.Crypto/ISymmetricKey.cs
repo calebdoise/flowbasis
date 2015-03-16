@@ -21,8 +21,8 @@ namespace FlowBasis.Crypto
     public enum SymmetricKeyType
     {
         Rijndael = 0,
-        TripleDes = 1,        
-        Aes = 2
+        TripleDES = 1,        
+        AES = 2
     }
 
 
@@ -142,8 +142,8 @@ namespace FlowBasis.Crypto
             switch (keyType)
             {
                 case SymmetricKeyType.Rijndael: return new RijndaelManaged();
-                case SymmetricKeyType.TripleDes: return new TripleDESCryptoServiceProvider();                
-                case SymmetricKeyType.Aes: return new System.Security.Cryptography.AesCryptoServiceProvider();
+                case SymmetricKeyType.TripleDES: return new TripleDESCryptoServiceProvider();                
+                case SymmetricKeyType.AES: return new System.Security.Cryptography.AesCryptoServiceProvider();
 
                 default: throw new Exception("Unknown symmetric key type: " + keyType);
             }

@@ -75,6 +75,15 @@ namespace FlowBasis.Crypto
             }
         }
 
+        public byte[] Encrypt(byte[] data)
+        {
+            return this.rsaKey.Encrypt(data, true);
+        }
+
+        public byte[] Decrypt(byte[] data)
+        {
+            return this.rsaKey.Decrypt(data, true);
+        }
     }
 
 
@@ -106,6 +115,11 @@ namespace FlowBasis.Crypto
             }
         }
 
+        public string XmlString
+        {
+            get { return this.rsaKey.ToXmlString(false); }
+        }
+
         public string PublicKeyHash
         {
             get
@@ -124,8 +138,13 @@ namespace FlowBasis.Crypto
         {
             using (IDisposable hash = (IDisposable)CryptographicHashHelper.GetClrHashObject(digestType))
             {
-                return rsaKey.VerifyData(data, hash, signature);
+                return this.rsaKey.VerifyData(data, hash, signature);
             }
+        }
+
+        public byte[] Encrypt(byte[] data)
+        {
+            return this.rsaKey.Encrypt(data, true);
         }
     }
 

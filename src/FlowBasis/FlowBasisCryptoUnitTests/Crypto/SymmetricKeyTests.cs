@@ -15,12 +15,12 @@ namespace FlowBasisCryptoUnitTests.Crypto
         [TestMethod]
         public void Should_Rountrip_Encrypted_Strings()
         {
-            TestRoundtripEncryption(SymmetricKeyType.Aes, "hello#world!", 128, "Hello, world!");
-            TestRoundtripEncryption(SymmetricKeyType.Aes, "hello#world! 2", 256, "Hello, world! Again");
-            TestRoundtripEncryptionWithRandomKey(SymmetricKeyType.Aes, 128, "Hello, world! 22");
-            TestRoundtripEncryptionWithRandomKey(SymmetricKeyType.Aes, 256, "Hello, world! Again 22");
+            TestRoundtripEncryption(SymmetricKeyType.AES, "hello#world!", 128, "Hello, world!");
+            TestRoundtripEncryption(SymmetricKeyType.AES, "hello#world! 2", 256, "Hello, world! Again");
+            TestRoundtripEncryptionWithRandomKey(SymmetricKeyType.AES, 128, "Hello, world! 22");
+            TestRoundtripEncryptionWithRandomKey(SymmetricKeyType.AES, 256, "Hello, world! Again 22");
   
-            TestRoundtripEncryption(SymmetricKeyType.TripleDes, "hello#world! 5", 128, "Hello, world! 3");            
+            TestRoundtripEncryption(SymmetricKeyType.TripleDES, "hello#world! 5", 128, "Hello, world! 3");            
 
             TestRoundtripEncryption(SymmetricKeyType.Rijndael, "hello#world! 7", 128, "Hello, world! 4");
             TestRoundtripEncryption(SymmetricKeyType.Rijndael, "hello#world! 8", 256, "Hello, world! Again 4");
