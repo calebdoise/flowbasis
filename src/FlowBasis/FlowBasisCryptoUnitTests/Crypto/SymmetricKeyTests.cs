@@ -45,7 +45,7 @@ namespace FlowBasisCryptoUnitTests.Crypto
 
         private void TestRoundtripEncryptionWithRandomKey(SymmetricKeyType keyType, int keySize, string phrase)
         {
-            byte[] keyBytes = RandomBytes.GetRandomBytesFromBitSize(keySize);
+            byte[] keyBytes = SecureRandomBytes.GetRandomBytesFromBitSize(keySize);
 
             var key = new SymmetricKey(keyType, keyBytes);
             var iv = key.GenerateIV();

@@ -39,9 +39,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CryptographicHashHelper.cs" />
+    <Compile Include="DigestType.cs" />
     <Compile Include="ISymmetricKey.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RandomBytes.cs" />
+    <Compile Include="SecureRandomBytes.cs" />
+    <Compile Include="RsaAsymmetricKeyPair.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

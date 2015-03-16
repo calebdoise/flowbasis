@@ -7,8 +7,18 @@ using System.Threading.Tasks;
 
 namespace FlowBasis.Crypto
 {
-    public static class RandomBytes
+    public static class SecureRandomBytes
     {
+        public static byte[] GetRandomBytes(int length)
+        {
+            using (var rng = new RNGCryptoServiceProvider())
+            {
+                byte[] byteArray = new byte[length];
+                rng.GetBytes(byteArray);
+                return byteArray;
+            }
+        }
+
         public static byte[] GetRandomBytesFromBitSize(int bitSize)
         {
             if (bitSize % 8 != 0)
@@ -16,12 +26,7 @@ namespace FlowBasis.Crypto
                 throw new ArgumentException("bitSize must be divisible by 8", "bitSize");
             }
 
-            using (var rng = new RNGCryptoServiceProvider())
-            {
-                byte[] byteArray = new byte[bitSize / 8];
-                rng.GetBytes(byteArray);
-                return byteArray;
-            }            
+            return GetRandomBytes(bitSize / 8);            
         }
     }
 }
