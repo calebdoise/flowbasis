@@ -17,7 +17,7 @@ namespace FlowBasisCryptoUnitTests.Crypto
         public void Dynamic_Rsa_Key_Should_Verify_Signatures()
         {
             var rsaKey = RsaAsymmetricKeyPair.CreateKey(2048);
-            var rsaPublicKey = RsaPublicKey.FromXmlString(rsaKey.PublicKeyXmlString);         
+            var rsaPublicKey = RsaPublicKey.FromXmlString(rsaKey.PublicKeyXmlString);                     
 
             byte[] dataToSign = new byte[500];
             var random = new Random(23421);

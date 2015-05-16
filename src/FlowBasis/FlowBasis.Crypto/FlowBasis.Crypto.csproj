@@ -42,6 +42,7 @@
     <Compile Include="CryptographicHashHelper.cs" />
     <Compile Include="DigestType.cs" />
     <Compile Include="ISymmetricKey.cs" />
+    <Compile Include="PasswordGenerator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SecureRandomBytes.cs" />
     <Compile Include="RsaAsymmetricKeyPair.cs" />
