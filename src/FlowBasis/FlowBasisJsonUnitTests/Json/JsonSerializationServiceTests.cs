@@ -46,6 +46,11 @@ namespace FlowBasisJsonUnitTests.Json
             resultTestObject = jsonSerializer.Parse<TestObject>("{\"someNumber\":45,\"someString\":\"hello world\"}");
             Assert.AreEqual(45, resultTestObject.SomeNumber);
             Assert.AreEqual("hello world", resultTestObject.SomeString);
+
+            resultTestObject = jsonSerializer.Parse<TestObject>("{\"someNumber\":45,\"someString\":\"hello world\",\"someNullableByte\":46}");
+            Assert.AreEqual(45, resultTestObject.SomeNumber);
+            Assert.AreEqual("hello world", resultTestObject.SomeString);
+            Assert.AreEqual((byte)46, resultTestObject.SomeNullableByte);
         }
 
 
@@ -54,6 +59,8 @@ namespace FlowBasisJsonUnitTests.Json
             public int SomeNumber { get; set; }
 
             public string SomeString { get; set; }
+
+            public byte? SomeNullableByte { get; set; }
         }
     }
 }

@@ -240,6 +240,10 @@ namespace FlowBasis.Json
             {
                 return Convert.ToInt64(value);
             }
+            else if (elementType == typeof(byte))
+            {
+                return Convert.ToByte(value);
+            }
             else if (elementType == typeof(bool))
             {
                 return Convert.ToBoolean(value);
