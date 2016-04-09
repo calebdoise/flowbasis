@@ -13,6 +13,9 @@ namespace FlowBasis.Json
         private static Type s_typeOfGenericIList = typeof(IList<>);
         private static Type s_typeOfGenericList = typeof(List<>);
 
+        private DefaultJObjectMapperProviderOptions options;
+        private DefaultClassMappingOptions defaultClassMappingOptions;
+
         private Dictionary<Type, IJObjectMapper> typeToCustomMapperMap = new Dictionary<Type, IJObjectMapper>();
 
         private JObjectPrimitiveMapper primitiveMapper = new JObjectPrimitiveMapper();
@@ -22,8 +25,19 @@ namespace FlowBasis.Json
         private JObjectEnumMapper enumMapper = new JObjectEnumMapper();
 
 
-        public DefaultJObjectMapperProvider()
+        public DefaultJObjectMapperProvider() : this(null)
+        {            
+        }
+
+        public DefaultJObjectMapperProvider(DefaultJObjectMapperProviderOptions options)
         {
+            this.options = (options != null) ? options : new DefaultJObjectMapperProviderOptions();
+
+            this.defaultClassMappingOptions = this.options.DefaultClassMappingOptions;
+            if (this.defaultClassMappingOptions == null)
+            {
+                this.defaultClassMappingOptions = new DefaultClassMappingOptions();
+            }
         }
 
 
@@ -35,15 +49,15 @@ namespace FlowBasis.Json
 
         public IJObjectMapper ResovleJObjectMapperForInstance(object instance)
         {
-            if (instance == null)            
-                throw new ArgumentNullException("instance");            
+            if (instance == null)
+                throw new ArgumentNullException("instance");
 
             Type type = instance.GetType();
             return this.ResovleJObjectMapperForInstanceType(type);
         }
 
         private IJObjectMapper ResovleJObjectMapperForInstanceType(Type type)
-        {            
+        {
             IJObjectMapper registeredMapper;
             if (this.typeToCustomMapperMap.TryGetValue(type, out registeredMapper))
             {
@@ -69,7 +83,7 @@ namespace FlowBasis.Json
             else if (typeof(IDictionary).IsAssignableFrom(type) || typeof(IDictionary<string, object>).IsAssignableFrom(type))
             {
                 return this.dictionaryMapper;
-            }            
+            }
             else if (type.IsArray)
             {
                 return this.arrayMapper;
@@ -85,7 +99,7 @@ namespace FlowBasis.Json
             else if (type.IsClass || type.IsValueType)
             {
                 return this.GetClassMapper(type);
-            }            
+            }
             else
             {
                 throw new NotSupportedException("Unsupported type: " + type.FullName);
@@ -96,7 +110,7 @@ namespace FlowBasis.Json
         public IJObjectMapper ResovleJObjectMapperForJObject(object jObject, Type targetType)
         {
             if (jObject == null)
-                throw new ArgumentNullException("jObject");            
+                throw new ArgumentNullException("jObject");
 
             Type jObjectType = jObject.GetType();
 
@@ -126,7 +140,7 @@ namespace FlowBasis.Json
             else if (targetType.IsPrimitive || targetType == typeof(string) || targetType == typeof(decimal) || targetType == typeof(DateTime))
             {
                 return this.primitiveMapper;
-            }      
+            }
             else if (targetType.IsArray)
             {
                 return this.arrayMapper;
@@ -163,7 +177,7 @@ namespace FlowBasis.Json
 
         protected virtual IJObjectMapper GetClassMapper(Type type)
         {
-            var classMapper = JObjectStructuredClassMapper.GetDefaultClassMapping(type);
+            var classMapper = JObjectStructuredClassMapper.GetDefaultClassMapping(type, this.defaultClassMappingOptions);
             return classMapper;
         }
 
@@ -171,7 +185,7 @@ namespace FlowBasis.Json
         public virtual IJObjectMapper GetJObjectMapperByMapperType(Type mapperType)
         {
             object mapper = Activator.CreateInstance(mapperType);
-            return (IJObjectMapper)mapper;        
+            return (IJObjectMapper)mapper;
         }
 
 
@@ -189,6 +203,11 @@ namespace FlowBasis.Json
         }
     }
 
+
+    public class DefaultJObjectMapperProviderOptions
+    { 
+        public DefaultClassMappingOptions DefaultClassMappingOptions { get; set; }
+    }
 
 
     public class JObjectPrimitiveMapper : IJObjectMapper

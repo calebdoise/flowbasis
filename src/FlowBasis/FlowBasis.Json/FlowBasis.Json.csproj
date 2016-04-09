@@ -58,6 +58,7 @@
     <Compile Include="JsonPropertyAttribute.cs" />
     <Compile Include="JsonSerializationService.cs" />
     <Compile Include="JsonTypeAttribute.cs" />
+    <Compile Include="Mappers\DateTimeAsEpochMillisecondsMapper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

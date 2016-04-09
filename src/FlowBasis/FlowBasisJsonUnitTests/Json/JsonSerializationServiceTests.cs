@@ -20,9 +20,45 @@ namespace FlowBasisJsonUnitTests.Json
             Assert.AreEqual("4", jsonSerializer.Stringify(4));
             Assert.AreEqual("\"Hello\"", jsonSerializer.Stringify("Hello"));
 
-            // We won't value ("someString": null) in the output because we exclude null values by default.
+            // We won't have value ("someString": null) in the output because we exclude null values by default.
             Assert.AreEqual("{\"someNumber\":42}", jsonSerializer.Stringify(new TestObject { SomeNumber = 42 }));
         }
+
+        [TestMethod]
+        public void Test_Stringify_No_Camel_Case()
+        {
+            var rootMapper = new JObjectRootMapper(
+                new DefaultJObjectMapperProvider(
+                    new DefaultJObjectMapperProviderOptions
+                    {
+                        DefaultClassMappingOptions = new DefaultClassMappingOptions
+                        {
+                            UseCamelCase = false
+                        }
+                    }));
+            
+            var jsonSerializer = new JsonSerializationService(() => rootMapper);
+
+            // We won't value ("someString": null) in the output because we exclude null values by default.
+            Assert.AreEqual("{\"SomeNumber\":42}", jsonSerializer.Stringify(new TestObject { SomeNumber = 42 }));
+        }
+
+        [TestMethod]
+        public void Test_Stringify_Advanced()
+        {
+            Func<IJObjectRootMapper> rootMapperFactory = () => new JObjectRootMapper();
+            var jsonSerializer = new JsonSerializationService(rootMapperFactory);
+
+            Assert.AreEqual(
+                "{\"someDate\":1399075200000}",
+                jsonSerializer.Stringify(
+                    new TestObjectEx
+                    {
+                        SomeDate = new DateTime(2014, 5, 3),
+                        NumberThatWillNotBeSerialized = 452342
+                    }));
+        }
+
 
         [TestMethod]
         public void Test_Parse()
@@ -53,6 +89,16 @@ namespace FlowBasisJsonUnitTests.Json
             Assert.AreEqual((byte)46, resultTestObject.SomeNullableByte);
         }
 
+        [TestMethod]
+        public void Test_Parse_Advanced()
+        {
+            Func<IJObjectRootMapper> rootMapperFactory = () => new JObjectRootMapper();
+            var jsonSerializer = new JsonSerializationService(rootMapperFactory);
+
+            TestObjectEx resultTestObject = jsonSerializer.Parse<TestObjectEx>("{\"someDate\":1399075200000}");
+            Assert.AreEqual(new DateTime(2014, 5, 3), resultTestObject.SomeDate);            
+        }
+
 
         public class TestObject
         {
@@ -61,6 +107,26 @@ namespace FlowBasisJsonUnitTests.Json
             public string SomeString { get; set; }
 
             public byte? SomeNullableByte { get; set; }
+        }
+
+
+        public class TestObjectEx
+        {
+            [JsonDateTimeAsEpochMillisecondsAttribute]
+            public DateTime? SomeDate { get; set; }
+
+            [FlowBasisJsonUnitTests.Json.JsonSerializationServiceTests.JsonIgnore]
+            public int NumberThatWillNotBeSerialized { get; set; }
+        }
+
+        [AttributeUsage(AttributeTargets.Property)]
+        public class JsonDateTimeAsEpochMillisecondsAttribute : Attribute
+        {
+        }
+
+        [AttributeUsage(AttributeTargets.Property)]
+        public class JsonIgnoreAttribute : Attribute
+        {
         }
     }
 }

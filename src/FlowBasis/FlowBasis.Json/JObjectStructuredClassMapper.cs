@@ -83,19 +83,22 @@ namespace FlowBasis.Json
         }
 
 
-        public static IJObjectMapper GetDefaultClassMapping(Type type)
+        public static IJObjectMapper GetDefaultClassMapping(Type type, DefaultClassMappingOptions options = null)
         {
             if ((type.IsClass || type.IsValueType) && !type.IsAbstract)
             {
                 // See if there is an override for the mapper.
                 var attrList = type.GetCustomAttributes(true);
-                JsonTypeAttribute jsonTypeAttr = (JsonTypeAttribute)attrList.FirstOrDefault(a => a is JsonTypeAttribute);
-                if (jsonTypeAttr != null)
+                foreach (var attr in attrList)
                 {
-                    if (jsonTypeAttr.MapperType != null)
+                    JsonTypeAttribute jsonTypeAttr = attr as JsonTypeAttribute;
+                    if (jsonTypeAttr != null)
                     {
-                        return (IJObjectMapper)Activator.CreateInstance(jsonTypeAttr.MapperType);
-                    }
+                        if (jsonTypeAttr.MapperType != null)
+                        {
+                            return (IJObjectMapper)Activator.CreateInstance(jsonTypeAttr.MapperType);
+                        }
+                    }                    
                 }
 
                 List<IJObjectPropertyMapper> propertyMappings = new List<IJObjectPropertyMapper>();
@@ -103,13 +106,47 @@ namespace FlowBasis.Json
                 var properties = type.GetProperties();
                 foreach (var propertyInfo in properties)
                 {
+                    JsonPropertyAttribute jsonPropertyAttr = null;
+                    bool jsonDateTimeAsEpochMillisecondsFound = false;
+
                     object[] propertyAttrList = propertyInfo.GetCustomAttributes(true);
 
-                    var jsonIgnoreAttr = (JsonIgnoreAttribute)propertyAttrList.FirstOrDefault(a => a is JsonIgnoreAttribute);
-                    if (jsonIgnoreAttr == null)
+                    bool ignore = false;
+                    foreach (object attr in propertyAttrList)
                     {
-                        var jsonPropertyAttr = (JsonPropertyAttribute)propertyAttrList.FirstOrDefault(a => a is JsonPropertyAttribute);
-
+                        if (attr is JsonIgnoreAttribute)
+                        {
+                            ignore = true;
+                            break;
+                        }
+                        else if (attr is NonSerializedAttribute)
+                        {
+                            ignore = true;
+                            break;
+                        }
+                        else if (attr is JsonPropertyAttribute)
+                        {
+                            jsonPropertyAttr = (JsonPropertyAttribute)attr;
+                        }
+                        else
+                        {
+                            // We allow some name-based attribute checks to influence formatting, so POCO class
+                            // libraries do not have to have a dependency on FlowBasis assembly.
+                            string attrTypeName = attr.GetType().Name;
+                            switch (attrTypeName)
+                            {
+                                case "JsonIgnoreAttribute":
+                                    ignore = true;
+                                    break;
+                                case "JsonDateTimeAsEpochMillisecondsAttribute":
+                                    jsonDateTimeAsEpochMillisecondsFound = true;
+                                    break;
+                            }
+                        }
+                    }
+                    
+                    if (!ignore)
+                    {                        
                         string jsonPropertyName;
                         if (jsonPropertyAttr != null && jsonPropertyAttr.Name != null)
                         {
@@ -117,15 +154,27 @@ namespace FlowBasis.Json
                         }
                         else
                         {
-                            jsonPropertyName = ConvertToCamelCase(propertyInfo.Name);
+                            if (options == null || options.UseCamelCase)
+                                jsonPropertyName = ConvertToCamelCase(propertyInfo.Name);
+                            else
+                                jsonPropertyName = propertyInfo.Name;
                         }
 
                         var propertyMapping = new JObjectPropertyMapper()
                         {
                             ClassPropertyInfo = propertyInfo,                            
                             JObjectPropertyName = jsonPropertyName,
-                            MapperType = (jsonPropertyAttr != null) ? jsonPropertyAttr.MapperType : null
+                            MapperType = null
                         };
+
+                        if (jsonPropertyAttr != null)
+                        {
+                            propertyMapping.MapperType = jsonPropertyAttr.MapperType;
+                        }
+                        else if (jsonDateTimeAsEpochMillisecondsFound)
+                        {
+                            propertyMapping.MapperType = typeof(Mappers.DateTimeAsEpochMillisecondsMapper);
+                        }
 
                         propertyMappings.Add(propertyMapping);
                     }
@@ -243,5 +292,15 @@ namespace FlowBasis.Json
 
         void SetInstanceValue(object instance, object jObject, IJObjectRootMapper rootMapper);
         object GetJObjectValue(object instance, IJObjectRootMapper rootMapper); 
+    }
+
+    public class DefaultClassMappingOptions
+    {
+        public DefaultClassMappingOptions()
+        {
+            this.UseCamelCase = true;
+        }
+
+        public bool UseCamelCase { get; set; }
     }
 }
