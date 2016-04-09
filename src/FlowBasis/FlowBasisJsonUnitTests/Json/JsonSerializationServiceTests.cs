@@ -38,9 +38,8 @@ namespace FlowBasisJsonUnitTests.Json
                     }));
             
             var jsonSerializer = new JsonSerializationService(() => rootMapper);
-
-            // We won't value ("someString": null) in the output because we exclude null values by default.
-            Assert.AreEqual("{\"SomeNumber\":42}", jsonSerializer.Stringify(new TestObject { SomeNumber = 42 }));
+            
+            Assert.AreEqual("{\"SomeNumber\":42}", jsonSerializer.Stringify(new TestObject { SomeNumber = 42 }));            
         }
 
         [TestMethod]
@@ -56,6 +55,14 @@ namespace FlowBasisJsonUnitTests.Json
                     {
                         SomeDate = new DateTime(2014, 5, 3),
                         NumberThatWillNotBeSerialized = 452342
+                    }));
+
+            Assert.AreEqual(
+                "{\"color\":2}",
+                jsonSerializer.Stringify(
+                    new TestObjectEx
+                    {
+                        Color = TestEnumColors.Green                        
                     }));
         }
 
@@ -96,7 +103,10 @@ namespace FlowBasisJsonUnitTests.Json
             var jsonSerializer = new JsonSerializationService(rootMapperFactory);
 
             TestObjectEx resultTestObject = jsonSerializer.Parse<TestObjectEx>("{\"someDate\":1399075200000}");
-            Assert.AreEqual(new DateTime(2014, 5, 3), resultTestObject.SomeDate);            
+            Assert.AreEqual(new DateTime(2014, 5, 3), resultTestObject.SomeDate);
+
+            resultTestObject = jsonSerializer.Parse<TestObjectEx>("{\"color\":2}");
+            Assert.AreEqual(TestEnumColors.Green, resultTestObject.Color);
         }
 
 
@@ -112,15 +122,30 @@ namespace FlowBasisJsonUnitTests.Json
 
         public class TestObjectEx
         {
-            [JsonDateTimeAsEpochMillisecondsAttribute]
+            [FlowBasisJsonUnitTests.Json.JsonSerializationServiceTests.JsonDateTimeAsEpochMillisecondsAttribute]
             public DateTime? SomeDate { get; set; }
+
+            [FlowBasisJsonUnitTests.Json.JsonSerializationServiceTests.JsonEnumAsInteger]
+            public TestEnumColors? Color { get; set; }
 
             [FlowBasisJsonUnitTests.Json.JsonSerializationServiceTests.JsonIgnore]
             public int NumberThatWillNotBeSerialized { get; set; }
         }
 
+        public enum TestEnumColors : int
+        {
+            Red = 1,
+            Green = 2,
+            Blue = 3
+        }
+
         [AttributeUsage(AttributeTargets.Property)]
         public class JsonDateTimeAsEpochMillisecondsAttribute : Attribute
+        {
+        }
+
+        [AttributeUsage(AttributeTargets.Property)]
+        public class JsonEnumAsIntegerAttribute : Attribute
         {
         }
 
