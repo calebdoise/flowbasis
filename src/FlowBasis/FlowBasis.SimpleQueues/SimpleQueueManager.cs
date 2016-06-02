@@ -42,7 +42,7 @@ namespace FlowBasis.SimpleQueues
                     throw new Exception($"Queue is already registered: {queueName}");
                 }
 
-                ISimpleQueue queue = this.options.CreateQueueCallback(queueName, queueMode);
+                ISimpleQueue queue = this.options.CreateQueueHandler(queueName, queueMode);
 
                 var registeredQueue = new RegisteredQueue
                 {
@@ -65,8 +65,8 @@ namespace FlowBasis.SimpleQueues
 
     public class SimpleQueueManagerOptions
     {
-        public CreateQueueCallback CreateQueueCallback { get; set; }
+        public CreateQueueHandler CreateQueueHandler { get; set; }
     }
 
-    public delegate ISimpleQueue CreateQueueCallback(string queueName, SimpleQueueMode queueMode);
+    public delegate ISimpleQueue CreateQueueHandler(string queueName, SimpleQueueMode queueMode);
 }
