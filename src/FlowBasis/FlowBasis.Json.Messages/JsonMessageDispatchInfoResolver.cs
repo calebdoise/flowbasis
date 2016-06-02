@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FlowBasis.Json.Messages
 {
-    public class JsonMessageDispatchInfoResolver
+    public class JsonMessageDispatchInfoResolver : IJsonMessageDispatchInfoResolver
     {
         private Dictionary<string, JsonMessageDispatcher> actionToHandlerMap = new Dictionary<string, JsonMessageDispatcher>();
         private IServiceProvider serviceProvider;
@@ -73,8 +73,10 @@ namespace FlowBasis.Json.Messages
             }
         }
 
-        public JsonMessageDispatcher GetDispatcherForAction(string action)
+        public IJsonMessageDispatcher GetDispatcher(JsonMessageContext messageContext)
         {
+            string action = messageContext.Action;
+
             JsonMessageDispatcher dispatcher;
             if (this.actionToHandlerMap.TryGetValue(action, out dispatcher))
             {

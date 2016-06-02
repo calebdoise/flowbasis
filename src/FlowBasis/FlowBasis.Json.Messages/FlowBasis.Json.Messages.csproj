@@ -40,6 +40,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IJsonMessageDispatcher.cs" />
+    <Compile Include="IJsonMessageDispatchInfoResolver.cs" />
     <Compile Include="JsonMessageContext.cs" />
     <Compile Include="JsonMessageDispatcher.cs" />
     <Compile Include="JsonMessageDispatchInfoResolver.cs" />

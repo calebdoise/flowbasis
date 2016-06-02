@@ -26,7 +26,7 @@ namespace FlowBasisJsonUnitTests.Json.Messages
                 },
                 (JObject)JsonSerializers.Default.Parse("{\"someInt\":4, \"someStr\": \"foo1\"}"));
 
-            var dispatcher = dispatchResolver.GetDispatcherForAction(messageContext.Action);
+            var dispatcher = dispatchResolver.GetDispatcher(messageContext);
 
             // Test with JsonMessageContext parameter.
             TestMessageDispatcher.ClearValues();
@@ -42,7 +42,7 @@ namespace FlowBasisJsonUnitTests.Json.Messages
                 },
                 (JObject)JsonSerializers.Default.Parse("{\"someInt\":5, \"someStr\": \"foo2\"}"));
 
-            dispatcher = dispatchResolver.GetDispatcherForAction(messageContext.Action);
+            dispatcher = dispatchResolver.GetDispatcher(messageContext);
 
             TestMessageDispatcher.ClearValues();
             dispatcher.Dispatch(messageContext);

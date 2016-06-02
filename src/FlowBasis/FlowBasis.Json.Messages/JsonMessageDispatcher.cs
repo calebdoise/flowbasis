@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FlowBasis.Json.Messages
 {
-    public class JsonMessageDispatcher
+    public class JsonMessageDispatcher : IJsonMessageDispatcher
     {
         private JsonMessageDispatchInfo dispatcherInfo;
         private IServiceProvider serviceProvider;        
