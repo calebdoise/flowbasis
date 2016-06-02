@@ -29,7 +29,7 @@ namespace FlowBasis.Json.Messages
                 actionPrefix = actionPrefix.Substring(0, actionPrefix.Length - "Dispatcher".Length);
             }
 
-            MethodInfo[] methods = dispatchControllerType.GetMethods();
+            MethodInfo[] methods = dispatchControllerType.GetMethods(BindingFlags.Instance | BindingFlags.InvokeMethod | BindingFlags.Public);
             foreach (MethodInfo method in methods)
             {
                 bool includeMethod = true;
@@ -48,6 +48,8 @@ namespace FlowBasis.Json.Messages
                         DispatchControllerType = dispatchControllerType,
                         DispatchMethod = method                        
                     };
+
+                    this.RegisterDispatcher(action, dispatchInfo);
                 }
             }
         }

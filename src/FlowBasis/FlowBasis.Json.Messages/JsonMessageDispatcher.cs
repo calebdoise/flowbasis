@@ -70,7 +70,7 @@ namespace FlowBasis.Json.Messages
                 {
                     paramValue = messageContext;
                 }
-                else if (paramInfo.Name == "body")
+                else if (paramInfo.Name == "messageBody")
                 {
                     paramValue = jsonSerializer.Map(body, paramInfo.ParameterType);
                 }
@@ -89,7 +89,7 @@ namespace FlowBasis.Json.Messages
                 paramValues[co] = paramValue;
             }
 
-            this.dispatcherInfo.DispatchMethod.Invoke(dispatchController, paramValues);
+            this.dispatcherInfo.DispatchMethod.Invoke(dispatchController, paramValues);            
         }
     }
 }
