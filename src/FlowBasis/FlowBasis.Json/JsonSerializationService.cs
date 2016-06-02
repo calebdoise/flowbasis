@@ -61,5 +61,17 @@ namespace FlowBasis.Json
         {
             return (T)Parse(json, typeof(T));
         }
+
+        public object Map(object jObject, Type targetType)
+        {
+            var rootMapper = this.rootMapperFactory();
+            object targetValue = rootMapper.FromJObject(jObject, targetType);
+            return targetValue;
+        }
+
+        public T Map<T>(object jObject)
+        {
+            return (T)Map(jObject, typeof(T));
+        }
     }
 }

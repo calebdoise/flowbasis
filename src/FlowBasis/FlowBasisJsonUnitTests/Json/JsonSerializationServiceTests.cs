@@ -109,6 +109,19 @@ namespace FlowBasisJsonUnitTests.Json
             Assert.AreEqual(TestEnumColors.Green, resultTestObject.Color);
         }
 
+        [TestMethod]
+        public void Test_Default_Serializers()
+        {
+            Assert.AreEqual("{\"someNumber\":42}", JsonSerializers.Default.Stringify(new TestObject { SomeNumber = 42 }));
+            Assert.AreEqual("{\"SomeNumber\":42}", JsonSerializers.NoCamelCasing.Stringify(new TestObject { SomeNumber = 42 }));
+        }
+
+        [TestMethod]
+        public void Test_JsonSerializer_Map()
+        {
+            TestObject result = JsonSerializers.Default.Map<TestObject>(JObject.Parse("{\"someNumber\":42}"));
+            Assert.AreEqual(42, result.SomeNumber);
+        }
 
         public class TestObject
         {

@@ -1,18 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{DDE7365A-D677-4D3D-AAF5-613E08A0DE73}</ProjectGuid>
+    <ProjectGuid>{5DBC68B0-A5D3-4D29-BDB1-3D579F1369F9}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>FlowBasis.Json</RootNamespace>
-    <AssemblyName>FlowBasis.Json</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <RootNamespace>FlowBasis.Json.Messages</RootNamespace>
+    <AssemblyName>FlowBasis.Json.Messages</AssemblyName>
+    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,7 +20,6 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -31,40 +28,29 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DefaultJObjectMapperProvider.cs" />
-    <Compile Include="IJObjectMapper.cs" />
-    <Compile Include="IJObjectMapperProvider.cs" />
-    <Compile Include="IJObjectRootMapper.cs" />
-    <Compile Include="IJsonSerializationService.cs" />
-    <Compile Include="JObject.cs" />
-    <Compile Include="JObjectRootMapper.cs" />
-    <Compile Include="JObjectStructuredClassMapper.cs" />
-    <Compile Include="JsonIgnoreAttribute.cs" />
-    <Compile Include="JsonPropertyAttribute.cs" />
-    <Compile Include="JsonSerializationService.cs" />
-    <Compile Include="JsonSerializers.cs" />
-    <Compile Include="JsonTypeAttribute.cs" />
-    <Compile Include="Mappers\DateTimeAsEpochMillisecondsMapper.cs" />
-    <Compile Include="Mappers\EnumAsIntegerMapper.cs" />
+    <Compile Include="JsonMessageContext.cs" />
+    <Compile Include="JsonMessageDispatcher.cs" />
+    <Compile Include="JsonMessageDispatchInfoResolver.cs" />
+    <Compile Include="JsonMessageHeader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <ProjectReference Include="..\FlowBasis.Json\FlowBasis.Json.csproj">
+      <Project>{DDE7365A-D677-4D3D-AAF5-613E08A0DE73}</Project>
+      <Name>FlowBasis.Json</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

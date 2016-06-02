@@ -12,6 +12,9 @@ namespace FlowBasis.Json
         object Parse(string json);
         object Parse(string json, Type targetType);
         T Parse<T>(string json);
+
+        object Map(object jObject, Type targetType);
+        T Map<T>(object jObject);
     }
     
 }

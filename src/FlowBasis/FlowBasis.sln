@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowBasis.SimpleQueues", "F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowBasis.SimpleQueues.Redis", "FlowBasis.SimpleQueues.Redis\FlowBasis.SimpleQueues.Redis.csproj", "{7BD8C40E-8E38-4B81-9808-F7DA3ED6D000}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowBasis.Json.Messages", "FlowBasis.Json.Messages\FlowBasis.Json.Messages.csproj", "{5DBC68B0-A5D3-4D29-BDB1-3D579F1369F9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{7BD8C40E-8E38-4B81-9808-F7DA3ED6D000}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7BD8C40E-8E38-4B81-9808-F7DA3ED6D000}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7BD8C40E-8E38-4B81-9808-F7DA3ED6D000}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5DBC68B0-A5D3-4D29-BDB1-3D579F1369F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5DBC68B0-A5D3-4D29-BDB1-3D579F1369F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5DBC68B0-A5D3-4D29-BDB1-3D579F1369F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5DBC68B0-A5D3-4D29-BDB1-3D579F1369F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
