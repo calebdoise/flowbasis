@@ -7,12 +7,12 @@ using System.Threading.Tasks;
 
 namespace FlowBasis.Json.Messages
 {
-    public class JsonMessageDispatchInfoResolver : IJsonMessageDispatcherResolver
+    public class JsonMessageDispatcherResolver : IJsonMessageDispatcherResolver
     {
         private Dictionary<string, JsonMessageDispatcher> actionToHandlerMap = new Dictionary<string, JsonMessageDispatcher>();
         private IServiceProvider serviceProvider;        
 
-        public JsonMessageDispatchInfoResolver(IServiceProvider serviceProvider = null)
+        public JsonMessageDispatcherResolver(IServiceProvider serviceProvider = null)
         {
             this.serviceProvider = serviceProvider;
         }

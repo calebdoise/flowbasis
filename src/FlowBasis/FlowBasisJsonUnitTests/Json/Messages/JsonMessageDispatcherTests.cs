@@ -16,7 +16,7 @@ namespace FlowBasisJsonUnitTests.Json.Messages
         [TestMethod]
         public void Test_Method_Registration_And_Invocation()
         {
-            var dispatchResolver = new JsonMessageDispatchInfoResolver();
+            var dispatchResolver = new JsonMessageDispatcherResolver();
             dispatchResolver.RegisterDispatchControllerTypePublicMethods(typeof(TestMessageDispatcher));
 
             var messageContext = new JsonMessageContext(

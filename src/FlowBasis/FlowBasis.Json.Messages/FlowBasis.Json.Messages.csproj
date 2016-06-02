@@ -45,7 +45,7 @@
     <Compile Include="IJsonMessageQueueClient.cs" />
     <Compile Include="JsonMessageContext.cs" />
     <Compile Include="JsonMessageDispatcher.cs" />
-    <Compile Include="JsonMessageDispatchInfoResolver.cs" />
+    <Compile Include="JsonMessageDispatcherResolver.cs" />
     <Compile Include="JsonMessageHeader.cs" />
     <Compile Include="JsonMessageQueueClient.cs" />
     <Compile Include="JsonMessageQueueListener.cs" />
