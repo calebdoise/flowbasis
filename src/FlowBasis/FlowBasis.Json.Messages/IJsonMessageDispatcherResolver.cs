@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace FlowBasis.Json.Messages
 {
-    public interface IJsonMessageDispatchInfoResolver
+    public interface IJsonMessageDispatcherResolver
     {
-        IJsonMessageDispatcher GetDispatcher(JsonMessageContext messageContext);
+        IJsonMessageDispatcher GetDispatcher(JsonMessageContext messageContext);        
     }
 }

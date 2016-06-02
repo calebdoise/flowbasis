@@ -35,7 +35,5 @@ namespace FlowBasis.Json.Messages
             return this.Headers?.FirstOrDefault(h => h.Name == headerName)?.Value;
         }
     }
-
-
     
 }

@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace FlowBasis.Json.Messages
 {
-    public class JsonMessageDispatchInfoResolver : IJsonMessageDispatchInfoResolver
+    public class JsonMessageDispatchInfoResolver : IJsonMessageDispatcherResolver
     {
         private Dictionary<string, JsonMessageDispatcher> actionToHandlerMap = new Dictionary<string, JsonMessageDispatcher>();
-        private IServiceProvider serviceProvider;
+        private IServiceProvider serviceProvider;        
 
         public JsonMessageDispatchInfoResolver(IServiceProvider serviceProvider = null)
         {
@@ -71,6 +71,26 @@ namespace FlowBasis.Json.Messages
                 var dispatcher = new JsonMessageDispatcher(dispatchInfo, this.serviceProvider);
                 this.actionToHandlerMap[action] = dispatcher;
             }
+        }
+
+
+        public IJsonMessageDispatcher TryGetDispatcher(JsonMessageContext messageContext)
+        {
+            string action = messageContext.Action;
+
+            JsonMessageDispatcher dispatcher;
+            if (this.actionToHandlerMap.TryGetValue(action, out dispatcher))
+            {
+                return dispatcher;
+            }
+
+            // No dispatcher found, so see if we can use "*" action.
+            if (this.actionToHandlerMap.TryGetValue("*", out dispatcher))
+            {
+                return dispatcher;
+            }
+
+            return null;
         }
 
         public IJsonMessageDispatcher GetDispatcher(JsonMessageContext messageContext)

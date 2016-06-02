@@ -41,17 +41,24 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IJsonMessageDispatcher.cs" />
-    <Compile Include="IJsonMessageDispatchInfoResolver.cs" />
+    <Compile Include="IJsonMessageDispatcherResolver.cs" />
+    <Compile Include="IJsonMessageQueueClient.cs" />
     <Compile Include="JsonMessageContext.cs" />
     <Compile Include="JsonMessageDispatcher.cs" />
     <Compile Include="JsonMessageDispatchInfoResolver.cs" />
     <Compile Include="JsonMessageHeader.cs" />
+    <Compile Include="JsonMessageQueueClient.cs" />
+    <Compile Include="JsonMessageQueueListener.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FlowBasis.Json\FlowBasis.Json.csproj">
       <Project>{DDE7365A-D677-4D3D-AAF5-613E08A0DE73}</Project>
       <Name>FlowBasis.Json</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\FlowBasis.SimpleQueues\FlowBasis.SimpleQueues.csproj">
+      <Project>{a256da8e-6636-40ee-9609-111eafd7ab98}</Project>
+      <Name>FlowBasis.SimpleQueues</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

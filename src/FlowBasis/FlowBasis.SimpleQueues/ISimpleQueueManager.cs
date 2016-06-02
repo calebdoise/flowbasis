@@ -8,7 +8,7 @@ namespace FlowBasis.SimpleQueues
 {
     public interface ISimpleQueueManager
     {
-        ISimpleQueue RegisterQueue(string queueName, SimpleQueueMode queueMode);
+        ISimpleQueue RegisterQueue(string queueName, SimpleQueueMode queueMode, CreateQueueOptions options = null);
 
         ISimpleQueue GetQueue(string queueName);
     }

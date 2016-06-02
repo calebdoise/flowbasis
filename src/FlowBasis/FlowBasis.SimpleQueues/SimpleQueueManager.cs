@@ -33,7 +33,7 @@ namespace FlowBasis.SimpleQueues
             }
         }
 
-        public ISimpleQueue RegisterQueue(string queueName, SimpleQueueMode queueMode)
+        public ISimpleQueue RegisterQueue(string queueName, SimpleQueueMode queueMode, CreateQueueOptions options = null)
         {
             lock (this)
             {
@@ -42,7 +42,7 @@ namespace FlowBasis.SimpleQueues
                     throw new Exception($"Queue is already registered: {queueName}");
                 }
 
-                ISimpleQueue queue = this.options.CreateQueueHandler(queueName, queueMode);
+                ISimpleQueue queue = this.options.CreateQueueHandler(queueName, queueMode, options);
 
                 var registeredQueue = new RegisteredQueue
                 {
@@ -68,5 +68,11 @@ namespace FlowBasis.SimpleQueues
         public CreateQueueHandler CreateQueueHandler { get; set; }
     }
 
-    public delegate ISimpleQueue CreateQueueHandler(string queueName, SimpleQueueMode queueMode);
+    public class CreateQueueOptions
+    {
+        // Right now, this is a placeholder for future options so that we don't have to change signature of
+        //   CreateQueueHandler.
+    }
+
+    public delegate ISimpleQueue CreateQueueHandler(string queueName, SimpleQueueMode queueMode, CreateQueueOptions options);
 }
