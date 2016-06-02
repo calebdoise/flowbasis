@@ -58,7 +58,7 @@ namespace FlowBasis.Json.Messages
             ParameterInfo[] paramInfos = this.dispatcherInfo.DispatchMethod.GetParameters();
             object[] paramValues = new object[paramInfos.Length];
 
-            JObject body = messageContext.Body;
+            JObject body = messageContext.Body as JObject;
 
             for (int co = 0; co < paramInfos.Length; co++)
             {

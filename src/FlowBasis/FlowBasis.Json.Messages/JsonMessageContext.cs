@@ -12,7 +12,15 @@ namespace FlowBasis.Json.Messages
     {
         private string action;
 
-        public JsonMessageContext(List<JsonMessageHeader> headers, JObject body)
+        public JsonMessageContext(string action, object body) 
+            : this(
+                  new List<JsonMessageHeader> { new JsonMessageHeader { Name ="action", Value = action } },
+                  body
+                  )
+        {
+        }
+
+        public JsonMessageContext(List<JsonMessageHeader> headers, object body)
         {
             this.Headers = headers;
             this.Body = body;
@@ -22,7 +30,7 @@ namespace FlowBasis.Json.Messages
 
         public List<JsonMessageHeader> Headers { get; private set; }
 
-        public JObject Body { get; private set; }
+        public object Body { get; private set; }
 
         
         public string Action

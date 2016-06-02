@@ -56,6 +56,7 @@
     <Compile Include="Json\JsonSerializationServiceTests.cs" />
     <Compile Include="Json\JsonTypeAttributeTests.cs" />
     <Compile Include="Json\Messages\JsonMessageDispatcherTests.cs" />
+    <Compile Include="Json\Messages\JsonMessageQueueTests.cs" />
     <Compile Include="Json\NullablePrimitiveTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -67,6 +68,10 @@
     <ProjectReference Include="..\FlowBasis.Json\FlowBasis.Json.csproj">
       <Project>{DDE7365A-D677-4D3D-AAF5-613E08A0DE73}</Project>
       <Name>FlowBasis.Json</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\FlowBasis.SimpleQueues\FlowBasis.SimpleQueues.csproj">
+      <Project>{a256da8e-6636-40ee-9609-111eafd7ab98}</Project>
+      <Name>FlowBasis.SimpleQueues</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
