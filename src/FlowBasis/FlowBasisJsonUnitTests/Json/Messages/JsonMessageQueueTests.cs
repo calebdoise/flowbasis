@@ -17,16 +17,9 @@ namespace FlowBasisJsonUnitTests.Json.Messages
         [TestMethod]
         public void Test_JsonMessageQueues_Basics()
         {
-            var queueManager = new SimpleQueueManager(
-                new SimpleQueueManagerOptions
-                {
-                    CreateQueueHandler = (string queueName, SimpleQueueMode queueMode, CreateQueueOptions options) =>
-                    {
-                        return new InMemorySimpleQueue(queueMode);
-                    }
-                });
+            var queueManager = new SimpleQueueManager();
 
-            queueManager.RegisterQueue("JsonTest", SimpleQueueMode.Queue);
+            queueManager.RegisterQueue("JsonTest", new InMemorySimpleQueue(SimpleQueueMode.Queue));
 
             var dispatchResolver = new JsonMessageDispatcherResolver();
             dispatchResolver.RegisterDispatchControllerTypePublicMethods(typeof(JsonMessageQueueTester));
@@ -47,7 +40,7 @@ namespace FlowBasisJsonUnitTests.Json.Messages
 
             JsonMessageQueueTester.Result = null;
 
-            jsonQueueClient.SendMessage(
+            jsonQueueClient.Publish(
                 new JsonMessageContext(                
                     action: "JsonMessageQueueTester/Foo",
                     body: new JsonMessageQueueTester.FooRequest { SomeStr = "hello world 232" }));

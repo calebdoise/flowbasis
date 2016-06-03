@@ -9,12 +9,12 @@ namespace FlowBasis.SimpleQueues
     public interface ISimpleQueue
     {
         void Publish(string message);
-        ISimpleQueueSubscription Subscribe(Action<string> messageCallback);
+        IQueueSubscription Subscribe(Action<string> messageCallback);
 
         void UnsubscribeAll();
     }
 
-    public interface ISimpleQueueSubscription
+    public interface IQueueSubscription
     {
         void Unsubscribe();
     }

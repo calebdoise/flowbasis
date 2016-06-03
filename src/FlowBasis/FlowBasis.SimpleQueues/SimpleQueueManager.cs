@@ -7,17 +7,11 @@ using System.Threading.Tasks;
 namespace FlowBasis.SimpleQueues
 {
     public class SimpleQueueManager : ISimpleQueueManager
-    {
-        private SimpleQueueManagerOptions options;
-
+    {        
         private Dictionary<string, RegisteredQueue> queueNameToEntryMap = new Dictionary<string, RegisteredQueue>();
             
-        public SimpleQueueManager(SimpleQueueManagerOptions options)
-        {
-            if (options == null)
-                throw new ArgumentNullException(nameof(options));
-
-            this.options = options;
+        public SimpleQueueManager()
+        {        
         }
 
         public ISimpleQueue GetQueue(string queueName)
@@ -33,7 +27,7 @@ namespace FlowBasis.SimpleQueues
             }
         }
 
-        public ISimpleQueue RegisterQueue(string queueName, SimpleQueueMode queueMode, CreateQueueOptions options = null)
+        public void RegisterQueue(string queueName, ISimpleQueue queue)
         {
             lock (this)
             {
@@ -41,18 +35,14 @@ namespace FlowBasis.SimpleQueues
                 {
                     throw new Exception($"Queue is already registered: {queueName}");
                 }
-
-                ISimpleQueue queue = this.options.CreateQueueHandler(queueName, queueMode, options);
-
+         
                 var registeredQueue = new RegisteredQueue
                 {
                     Name = queueName,
                     Queue = queue
                 };
 
-                this.queueNameToEntryMap[queueName] = registeredQueue;
-
-                return queue;
+                this.queueNameToEntryMap[queueName] = registeredQueue;                
             }
         }
 
@@ -61,18 +51,5 @@ namespace FlowBasis.SimpleQueues
             public string Name { get; set; }
             public ISimpleQueue Queue { get; set; }
         }
-    }
-
-    public class SimpleQueueManagerOptions
-    {
-        public CreateQueueHandler CreateQueueHandler { get; set; }
-    }
-
-    public class CreateQueueOptions
-    {
-        // Right now, this is a placeholder for future options so that we don't have to change signature of
-        //   CreateQueueHandler.
-    }
-
-    public delegate ISimpleQueue CreateQueueHandler(string queueName, SimpleQueueMode queueMode, CreateQueueOptions options);
+    }   
 }

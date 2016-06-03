@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 namespace FlowBasis.SimpleQueues
 {
     public interface ISimpleQueueManager
-    {
-        ISimpleQueue RegisterQueue(string queueName, SimpleQueueMode queueMode, CreateQueueOptions options = null);
+    {        
+        void RegisterQueue(string queueName, ISimpleQueue queue);
 
         ISimpleQueue GetQueue(string queueName);
     }

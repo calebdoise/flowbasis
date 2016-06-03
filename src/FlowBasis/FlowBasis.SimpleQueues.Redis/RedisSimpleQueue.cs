@@ -61,7 +61,7 @@ namespace FlowBasis.SimpleQueues.Redis
             }
         }
 
-        public ISimpleQueueSubscription Subscribe(Action<string> messageCallback)
+        public IQueueSubscription Subscribe(Action<string> messageCallback)
         {
             if (this.queueMode == SimpleQueueMode.Queue)
             {
@@ -118,7 +118,7 @@ namespace FlowBasis.SimpleQueues.Redis
         }
 
 
-        private class RedisSimpleQueueSubscription : ISimpleQueueSubscription
+        private class RedisSimpleQueueSubscription : IQueueSubscription
         {
             private RedisSimpleQueue queue;
             private Action<RedisChannel, RedisValue> subCallback;

@@ -109,7 +109,7 @@ namespace FlowBasis.SimpleQueues.InMemory
             }
         }
 
-        public ISimpleQueueSubscription Subscribe(Action<string> messageCallback)
+        public IQueueSubscription Subscribe(Action<string> messageCallback)
         {
             lock (this)
             {
@@ -129,7 +129,7 @@ namespace FlowBasis.SimpleQueues.InMemory
             }
         }
 
-        private class InMemorySimpleQueueSubscription : ISimpleQueueSubscription
+        private class InMemorySimpleQueueSubscription : IQueueSubscription
         {
             private InMemorySimpleQueue queue;
             private Action<string> messageCallback;

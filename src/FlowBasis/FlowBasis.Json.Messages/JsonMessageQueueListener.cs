@@ -32,7 +32,7 @@ namespace FlowBasis.Json.Messages
             this.dispatcherResolver = options.DispatcherResolver;
         }
 
-        public static ISimpleQueueSubscription Subscribe(ISimpleQueue simpleQueue, JsonMessageQueueListenerOptions options)
+        public static IQueueSubscription Subscribe(ISimpleQueue simpleQueue, JsonMessageQueueListenerOptions options)
         {
             var listener = new JsonMessageQueueListener(options);
             return simpleQueue.Subscribe(listener.MessageHandler);
@@ -62,9 +62,14 @@ namespace FlowBasis.Json.Messages
                 var messageData = jsonSerializer.Parse<JsonMessageContextData>(messageString);
                 messageContext = new JsonMessageContext(messageData.Headers, messageData.Body as JObject);
             }
-      
+
+            this.MessageHandler(messageContext);
+        }
+
+        public void MessageHandler(JsonMessageContext messageContext)
+        {
             IJsonMessageDispatcher dispatcher = this.dispatcherResolver.GetDispatcher(messageContext);
-            dispatcher.Dispatch(messageContext);            
+            dispatcher.Dispatch(messageContext);
         }
     }
 

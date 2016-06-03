@@ -42,6 +42,7 @@
   <ItemGroup>
     <Compile Include="IJsonMessageDispatcher.cs" />
     <Compile Include="IJsonMessageDispatcherResolver.cs" />
+    <Compile Include="IJsonMessageQueue.cs" />
     <Compile Include="IJsonMessageQueueClient.cs" />
     <Compile Include="JsonMessageContext.cs" />
     <Compile Include="JsonMessageDispatcher.cs" />

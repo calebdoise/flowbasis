@@ -32,7 +32,7 @@ namespace FlowBasis.Json.Messages
             this.serviceProvider = serviceProvider;
         }
 
-        public void SendMessage(JsonMessageContext messageContext)
+        public void Publish(JsonMessageContext messageContext)
         {
             IJsonSerializationService jsonSerializer;
             ISimpleQueueManager queueManagerToUse = this.queueManager;
