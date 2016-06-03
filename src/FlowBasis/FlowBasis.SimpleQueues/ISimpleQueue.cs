@@ -19,7 +19,7 @@ namespace FlowBasis.SimpleQueues
         void Unsubscribe();
     }
 
-    public enum SimpleQueueMode
+    public enum QueueMode
     {
         /// <summary>
         /// Only one subscriber will see each message.

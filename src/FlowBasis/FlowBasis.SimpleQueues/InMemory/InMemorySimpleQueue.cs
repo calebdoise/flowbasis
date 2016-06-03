@@ -9,14 +9,14 @@ namespace FlowBasis.SimpleQueues.InMemory
 {
     public class InMemorySimpleQueue : ISimpleQueue
     {
-        private SimpleQueueMode queueMode;
+        private QueueMode queueMode;
 
         private Queue<string> currentMessages = new Queue<string>();
         private List<Action<string>> subscribers = new List<Action<string>>();
 
         private int lastCallbackIndex = -1;
 
-        public InMemorySimpleQueue(SimpleQueueMode queueMode)
+        public InMemorySimpleQueue(QueueMode queueMode)
         {
             this.queueMode = queueMode;
         }
@@ -28,7 +28,7 @@ namespace FlowBasis.SimpleQueues.InMemory
                 throw new ArgumentNullException(nameof(message));
             }
 
-            if (this.queueMode == SimpleQueueMode.FanOut)
+            if (this.queueMode == QueueMode.FanOut)
             {
                 // All active callbacks should get the message.
                 Action<string>[] callbacks;
@@ -43,7 +43,7 @@ namespace FlowBasis.SimpleQueues.InMemory
                     ThreadPool.QueueUserWorkItem((state) => { callback(message); });                    
                 }
             }
-            else if (this.queueMode == SimpleQueueMode.Queue)
+            else if (this.queueMode == QueueMode.Queue)
             {
                 lock (this)
                 {

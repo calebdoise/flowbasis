@@ -12,7 +12,7 @@ namespace FlowBasis.SimpleQueues.Redis
     {
         private ConnectionMultiplexer redisConnection;
 
-        private SimpleQueueMode queueMode;
+        private QueueMode queueMode;
 
         private string queueName;
         private string queueListName;
@@ -21,7 +21,7 @@ namespace FlowBasis.SimpleQueues.Redis
         private IDatabase db;
         private ISubscriber sub;
 
-        public RedisSimpleQueue(ConnectionMultiplexer redisConnection, string queueName, SimpleQueueMode queueMode = SimpleQueueMode.Queue)
+        public RedisSimpleQueue(ConnectionMultiplexer redisConnection, string queueName, QueueMode queueMode = QueueMode.Queue)
         {
             this.queueMode = queueMode;
 
@@ -31,12 +31,12 @@ namespace FlowBasis.SimpleQueues.Redis
 
             this.queueName = queueName;
 
-            if (this.queueMode == SimpleQueueMode.Queue)
+            if (this.queueMode == QueueMode.Queue)
             {                
                 this.queueListName = "queue--" + queueName;
                 this.queueNotificationChannelName = "queueChannel--" + queueName;
             }
-            else if (this.queueMode == SimpleQueueMode.FanOut)
+            else if (this.queueMode == QueueMode.FanOut)
             {                
                 this.queueNotificationChannelName = "topicChannel--" + queueName;
             }
@@ -48,14 +48,14 @@ namespace FlowBasis.SimpleQueues.Redis
 
         public void Publish(string message)
         {
-            if (this.queueMode == SimpleQueueMode.Queue)
+            if (this.queueMode == QueueMode.Queue)
             {
                 this.db.ListLeftPush(this.queueListName, message, flags: CommandFlags.FireAndForget);
 
                 // This will tell listeners to check for a message.
                 this.sub.Publish(this.queueNotificationChannelName, "");
             }
-            else if (this.queueMode == SimpleQueueMode.FanOut)
+            else if (this.queueMode == QueueMode.FanOut)
             {
                 this.sub.Publish(this.queueNotificationChannelName, message, CommandFlags.FireAndForget);
             }
@@ -63,7 +63,7 @@ namespace FlowBasis.SimpleQueues.Redis
 
         public IQueueSubscription Subscribe(Action<string> messageCallback)
         {
-            if (this.queueMode == SimpleQueueMode.Queue)
+            if (this.queueMode == QueueMode.Queue)
             {
                 Action<RedisChannel, RedisValue> subCallback = null;
                 subCallback = (channel, value) =>
@@ -90,7 +90,7 @@ namespace FlowBasis.SimpleQueues.Redis
 
                 return new RedisSimpleQueueSubscription(this, subCallback);
             }
-            else if (this.queueMode == SimpleQueueMode.FanOut)
+            else if (this.queueMode == QueueMode.FanOut)
             {
                 Action<RedisChannel, RedisValue> subCallback = null;
                 subCallback = (channel, value) =>

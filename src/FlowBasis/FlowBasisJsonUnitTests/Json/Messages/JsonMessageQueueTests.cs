@@ -18,7 +18,7 @@ namespace FlowBasisJsonUnitTests.Json.Messages
         public void Test_JsonMessageQueues_Basics()
         {
             var simpleQueueManager = new QueueManager<ISimpleQueue>();
-            simpleQueueManager.RegisterQueue("JsonTest", new InMemorySimpleQueue(SimpleQueueMode.Queue));
+            simpleQueueManager.RegisterQueue("JsonTest", new InMemorySimpleQueue(QueueMode.Queue));
 
             var jsonQueueManager = new QueueManager<IJsonMessageQueue>();
             jsonQueueManager.RegisterQueue("JsonTest",
