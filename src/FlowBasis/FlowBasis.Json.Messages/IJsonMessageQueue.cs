@@ -7,9 +7,11 @@ using System.Threading.Tasks;
 
 namespace FlowBasis.Json.Messages
 {
-    public interface IJsonMessageQueue : ISimpleQueue
+    public interface IJsonMessageQueue
     {
         void Publish(JsonMessageContext messageContext);
-        IQueueSubscription Subscribe(Action<JsonMessageContext> messageContextCallback);        
+        IQueueSubscription Subscribe(Action<JsonMessageContext> messageContextCallback);
+
+        void UnsubscribeAll();
     }
 }

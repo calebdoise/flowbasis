@@ -9,10 +9,7 @@ namespace FlowBasis.Json.Messages
 {
     public class JsonMessageQueueListener
     {
-        private JsonMessageQueueListenerOptions options;
-        private IServiceProvider serviceProvider;
-        private Func<string, JsonMessageContext> customMessageParser;
-
+        private JsonMessageQueueListenerOptions options;        
         private IJsonMessageDispatcherResolver dispatcherResolver;
 
 
@@ -27,44 +24,18 @@ namespace FlowBasis.Json.Messages
             }
 
             this.options = options;
-            this.serviceProvider = options.ServiceProvider;
-            this.customMessageParser = options.CustomMessageParser;
             this.dispatcherResolver = options.DispatcherResolver;
         }
 
-        public static IQueueSubscription Subscribe(ISimpleQueue simpleQueue, JsonMessageQueueListenerOptions options)
+        public static IQueueSubscription Subscribe(IJsonMessageQueue jsonMessageQueue, IJsonMessageDispatcherResolver dispatcherResolver)
         {
-            var listener = new JsonMessageQueueListener(options);
-            return simpleQueue.Subscribe(listener.MessageHandler);
-        }
-
-        public void MessageHandler(string messageString)
-        {
-            JsonMessageContext messageContext;
-
-            if (this.customMessageParser != null)
-            {
-                messageContext = this.customMessageParser(messageString);
-            }
-            else
-            {
-                IJsonSerializationService jsonSerializer;
-
-                if (this.serviceProvider != null)
+            var listener = new JsonMessageQueueListener(
+                new JsonMessageQueueListenerOptions
                 {
-                    jsonSerializer = (IJsonSerializationService)this.serviceProvider.GetService(typeof(IJsonSerializationService));                    
-                }
-                else
-                {
-                    jsonSerializer = JsonSerializers.Default;
-                }
-
-                var messageData = jsonSerializer.Parse<JsonMessageContextData>(messageString);
-                messageContext = new JsonMessageContext(messageData.Headers, messageData.Body as JObject);
-            }
-
-            this.MessageHandler(messageContext);
-        }
+                    DispatcherResolver = dispatcherResolver
+                });
+            return jsonMessageQueue.Subscribe(listener.MessageHandler);
+        }       
 
         public void MessageHandler(JsonMessageContext messageContext)
         {
@@ -74,11 +45,7 @@ namespace FlowBasis.Json.Messages
     }
 
     public class JsonMessageQueueListenerOptions
-    {
-        public IServiceProvider ServiceProvider { get; set; }
-
-        public Func<string, JsonMessageContext> CustomMessageParser { get; set; }
-
+    {       
         public IJsonMessageDispatcherResolver DispatcherResolver { get; set; }
     }
 }

@@ -14,7 +14,7 @@ namespace FlowBasis.Json.Messages
 
         public JsonMessageContext(string action, object body) 
             : this(
-                  new List<JsonMessageHeader> { new JsonMessageHeader { Name ="action", Value = action } },
+                  new List<JsonMessageHeader> { new JsonMessageHeader { Name = "action", Value = action } },
                   body
                   )
         {

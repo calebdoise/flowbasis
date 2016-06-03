@@ -17,30 +17,28 @@ namespace FlowBasisJsonUnitTests.Json.Messages
         [TestMethod]
         public void Test_JsonMessageQueues_Basics()
         {
-            var queueManager = new SimpleQueueManager();
+            var simpleQueueManager = new QueueManager<ISimpleQueue>();
+            simpleQueueManager.RegisterQueue("JsonTest", new InMemorySimpleQueue(SimpleQueueMode.Queue));
 
-            queueManager.RegisterQueue("JsonTest", new InMemorySimpleQueue(SimpleQueueMode.Queue));
+            var jsonQueueManager = new QueueManager<IJsonMessageQueue>();
+            jsonQueueManager.RegisterQueue("JsonTest",
+                new JsonMessageQueueViaSimpleQueue(
+                    new JsonMessageQueueViaSimpleQueueOptions
+                    {
+                        QueueManager = simpleQueueManager,
+                        QueueName = "JsonTest"                        
+                    }));
 
-            var dispatchResolver = new JsonMessageDispatcherResolver();
-            dispatchResolver.RegisterDispatchControllerTypePublicMethods(typeof(JsonMessageQueueTester));
+            var dispatcherResolver = new JsonMessageDispatcherResolver();
+            dispatcherResolver.RegisterDispatchControllerTypePublicMethods(typeof(JsonMessageQueueTester));
 
-            JsonMessageQueueListener.Subscribe(
-                queueManager.GetQueue("JsonTest"),
-                new JsonMessageQueueListenerOptions
-                {
-                    DispatcherResolver = dispatchResolver
-                });
+            JsonMessageQueueListener.Subscribe(jsonQueueManager.GetQueue("JsonTest"), dispatcherResolver);
 
-            var jsonQueueClient = new JsonMessageQueueClient(
-                new JsonMessageQueueClientOptions
-                {
-                    QueueName = "JsonTest",
-                    QueueManager = queueManager                                        
-                });
+            var jsonQueue = jsonQueueManager.GetQueue("JsonTest");
 
             JsonMessageQueueTester.Result = null;
 
-            jsonQueueClient.Publish(
+            jsonQueue.Publish(
                 new JsonMessageContext(                
                     action: "JsonMessageQueueTester/Foo",
                     body: new JsonMessageQueueTester.FooRequest { SomeStr = "hello world 232" }));

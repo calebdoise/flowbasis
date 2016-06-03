@@ -6,17 +6,17 @@ using System.Threading.Tasks;
 
 namespace FlowBasis.SimpleQueues
 {
-    public class SimpleQueueManager : ISimpleQueueManager
+    public class QueueManager<QueueType> : IQueueManager<QueueType>
     {        
-        private Dictionary<string, RegisteredQueue> queueNameToEntryMap = new Dictionary<string, RegisteredQueue>();
+        private Dictionary<string, RegisteredQueue<QueueType>> queueNameToEntryMap = new Dictionary<string, RegisteredQueue<QueueType>>();
             
-        public SimpleQueueManager()
+        public QueueManager()
         {        
         }
 
-        public ISimpleQueue GetQueue(string queueName)
+        public QueueType GetQueue(string queueName)
         {
-            RegisteredQueue registeredQueue;
+            RegisteredQueue<QueueType> registeredQueue;
             if (this.queueNameToEntryMap.TryGetValue(queueName, out registeredQueue))
             {
                 return registeredQueue.Queue;
@@ -27,7 +27,7 @@ namespace FlowBasis.SimpleQueues
             }
         }
 
-        public void RegisterQueue(string queueName, ISimpleQueue queue)
+        public void RegisterQueue(string queueName, QueueType queue)
         {
             lock (this)
             {
@@ -36,7 +36,7 @@ namespace FlowBasis.SimpleQueues
                     throw new Exception($"Queue is already registered: {queueName}");
                 }
          
-                var registeredQueue = new RegisteredQueue
+                var registeredQueue = new RegisteredQueue<QueueType>
                 {
                     Name = queueName,
                     Queue = queue
@@ -46,10 +46,14 @@ namespace FlowBasis.SimpleQueues
             }
         }
 
-        private class RegisteredQueue
+        private class RegisteredQueue<QueueType2>
         {
             public string Name { get; set; }
-            public ISimpleQueue Queue { get; set; }
+            public QueueType2 Queue { get; set; }
         }
     }   
+
+    public class SimpleQueueManager : QueueManager<ISimpleQueue>
+    {
+    }
 }
