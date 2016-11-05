@@ -12,6 +12,9 @@ namespace FlowBasis.Json
 
         private static Type s_typeOfGenericIList = typeof(IList<>);
         private static Type s_typeOfGenericList = typeof(List<>);
+        private static Type s_typeOfGenericIEnumerable = typeof(IEnumerable<>);
+        private static Type s_typeOfGenericNullable = typeof(Nullable<>);
+
 
         private DefaultJObjectMapperProviderOptions options;
         private DefaultClassMappingOptions defaultClassMappingOptions;
@@ -132,7 +135,7 @@ namespace FlowBasis.Json
             else
                 genericTypeDefinition = null;
 
-            if (targetTypeIsGeneric && genericTypeDefinition == typeof(Nullable<>))
+            if (targetTypeIsGeneric && genericTypeDefinition == s_typeOfGenericNullable)
             {
                 Type valueType = targetType.GetGenericArguments()[0];
                 return this.ResovleJObjectMapperForJObject(jObject, valueType);
@@ -154,6 +157,10 @@ namespace FlowBasis.Json
                 return this.listMapper;
             }
             else if (genericTypeDefinition != null && s_typeOfGenericIList == genericTypeDefinition)
+            {
+                return this.listMapper;
+            }
+            else if (genericTypeDefinition != null && s_typeOfGenericIEnumerable == genericTypeDefinition)
             {
                 return this.listMapper;
             }
@@ -366,6 +373,7 @@ namespace FlowBasis.Json
     {
         private static Type s_typeOfGenericIList = typeof(IList<>);
         private static Type s_typeOfGenericList = typeof(List<>);
+        private static Type s_typeOfGenericIEnumerable = typeof(IEnumerable<>);
 
         public object ToJObject(object instance, IJObjectRootMapper rootMapper)
         {
@@ -397,6 +405,12 @@ namespace FlowBasis.Json
                     targetTypeToUse = targetType;
                 }
                 else if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == s_typeOfGenericIList)
+                {
+                    useGenericList = true;
+                    elementType = targetType.GetGenericArguments()[0];
+                    targetTypeToUse = s_typeOfGenericList.MakeGenericType(elementType);
+                }
+                else if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == s_typeOfGenericIEnumerable)
                 {
                     useGenericList = true;
                     elementType = targetType.GetGenericArguments()[0];
