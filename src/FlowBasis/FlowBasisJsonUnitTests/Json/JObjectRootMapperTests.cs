@@ -184,6 +184,17 @@ namespace FlowBasisJsonUnitTests.Json
             Assert.AreEqual(4, resultGenericListInt[2]);
         }
 
+        [TestMethod]
+        public void Should_Restore_Arrays_As_Lists_With_Enumerable_Target()
+        {
+            JObjectRootMapper classMapper = new JObjectRootMapper();
+
+            List<int> resultListInt = (List<int>)classMapper.FromJObject(new List<object>() { 34, -10, 3 }, typeof(IEnumerable<int>));
+            Assert.AreEqual(3, resultListInt.Count);
+            Assert.AreEqual(34, resultListInt[0]);
+            Assert.AreEqual(-10, resultListInt[1]);
+            Assert.AreEqual(3, resultListInt[2]);
+        }
 
 
         [TestMethod]
