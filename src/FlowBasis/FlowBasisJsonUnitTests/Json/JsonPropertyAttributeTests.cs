@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using FlowBasis.Json;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using FlowBasis.Json.Mappers;
 
 namespace FlowBasisJsonUnitTests.Json
 {
@@ -37,17 +38,21 @@ namespace FlowBasisJsonUnitTests.Json
 
             TestObject testObject = new TestObject()
             {
-                Name = new TestNameHolder() { FirstName = "Bob", LastName = "Whoever" }
+                Name = new TestNameHolder() { FirstName = "Bob", LastName = "Whoever" },
+                NumberAsString = 4.56M
             };
 
             dynamic resultObject = mapper.ToJObject(testObject);
             Assert.IsInstanceOfType(resultObject.name, typeof(string));
             Assert.AreEqual("Bob Whoever", resultObject.name);
+            Assert.AreEqual("4.56", resultObject.numberAsString);
 
             TestObject resultTestObject = (TestObject)mapper.FromJObject(resultObject, typeof(TestObject));
             Assert.AreEqual("Bob", resultTestObject.Name.FirstName);
             Assert.AreEqual("Whoever", resultTestObject.Name.LastName);
+            Assert.AreEqual(4.56M, resultTestObject.NumberAsString);
         }
+        
 
 
         public class TestObject
@@ -57,6 +62,9 @@ namespace FlowBasisJsonUnitTests.Json
 
             [JsonProperty(MapperType = typeof(TestNameHolderMapper))]
             public TestNameHolder Name { get; set; }
+
+            [JsonProperty(MapperType = typeof(NumberAsStringMapper))]
+            public decimal? NumberAsString { get; set; }
         }
 
         public class TestNameHolder

@@ -60,6 +60,7 @@
     <Compile Include="JsonSerializers.cs" />
     <Compile Include="JsonTypeAttribute.cs" />
     <Compile Include="Mappers\DateTimeAsEpochMillisecondsMapper.cs" />
+    <Compile Include="Mappers\NumberAsStringMapper.cs" />
     <Compile Include="Mappers\EnumAsIntegerMapper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

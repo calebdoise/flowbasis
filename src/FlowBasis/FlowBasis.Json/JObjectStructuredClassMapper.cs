@@ -109,6 +109,7 @@ namespace FlowBasis.Json
                     JsonPropertyAttribute jsonPropertyAttr = null;
                     bool jsonDateTimeAsEpochMillisecondsFound = false;
                     bool jsonEnumAsInteger = false;
+                    bool jsonNumberAsString = false;
 
                     object[] propertyAttrList = propertyInfo.GetCustomAttributes(true);
 
@@ -144,6 +145,9 @@ namespace FlowBasis.Json
                                     break;
                                 case "JsonEnumAsIntegerAttribute":
                                     jsonEnumAsInteger = true;
+                                    break;
+                                case "JsonNumberAsString":
+                                    jsonNumberAsString = true;
                                     break;
                             }
                         }
@@ -182,6 +186,10 @@ namespace FlowBasis.Json
                         else if (jsonEnumAsInteger)
                         {
                             propertyMapping.MapperType = typeof(Mappers.EnumAsIntegerMapper);
+                        }
+                        else if (jsonNumberAsString)
+                        {
+                            propertyMapping.MapperType = typeof(Mappers.NumberAsStringMapper);
                         }
 
                         propertyMappings.Add(propertyMapping);
