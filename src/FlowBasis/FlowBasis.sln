@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowBasis.Json", "FlowBasis.Json\FlowBasis.Json.csproj", "{DDE7365A-D677-4D3D-AAF5-613E08A0DE73}"
 EndProject
@@ -16,6 +16,14 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowBasis.SimpleQueues.Redis", "FlowBasis.SimpleQueues.Redis\FlowBasis.SimpleQueues.Redis.csproj", "{7BD8C40E-8E38-4B81-9808-F7DA3ED6D000}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowBasis.Json.Messages", "FlowBasis.Json.Messages\FlowBasis.Json.Messages.csproj", "{5DBC68B0-A5D3-4D29-BDB1-3D579F1369F9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowBasis.Flows", "FlowBasis.Flows\FlowBasis.Flows.csproj", "{A1B12EE3-D38F-4496-A285-1897FBD66C37}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowBasis.Flows.InMem", "FlowBasis.Flows.InMem\FlowBasis.Flows.InMem.csproj", "{1D323917-D889-4161-B8D5-2D2E3A9F83D8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowBasis.Flows.Sql", "FlowBasis.Flows.Sql\FlowBasis.Flows.Sql.csproj", "{45DAAEA6-0130-468A-B4B6-99918DE7593B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Flows", "Flows", "{2D942DE7-290F-4C19-ABEB-A5EBC4CC7A40}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -51,8 +59,25 @@ Global
 		{5DBC68B0-A5D3-4D29-BDB1-3D579F1369F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5DBC68B0-A5D3-4D29-BDB1-3D579F1369F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5DBC68B0-A5D3-4D29-BDB1-3D579F1369F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1B12EE3-D38F-4496-A285-1897FBD66C37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1B12EE3-D38F-4496-A285-1897FBD66C37}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1B12EE3-D38F-4496-A285-1897FBD66C37}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1B12EE3-D38F-4496-A285-1897FBD66C37}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D323917-D889-4161-B8D5-2D2E3A9F83D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D323917-D889-4161-B8D5-2D2E3A9F83D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D323917-D889-4161-B8D5-2D2E3A9F83D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D323917-D889-4161-B8D5-2D2E3A9F83D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45DAAEA6-0130-468A-B4B6-99918DE7593B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45DAAEA6-0130-468A-B4B6-99918DE7593B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45DAAEA6-0130-468A-B4B6-99918DE7593B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45DAAEA6-0130-468A-B4B6-99918DE7593B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A1B12EE3-D38F-4496-A285-1897FBD66C37} = {2D942DE7-290F-4C19-ABEB-A5EBC4CC7A40}
+		{1D323917-D889-4161-B8D5-2D2E3A9F83D8} = {2D942DE7-290F-4C19-ABEB-A5EBC4CC7A40}
+		{45DAAEA6-0130-468A-B4B6-99918DE7593B} = {2D942DE7-290F-4C19-ABEB-A5EBC4CC7A40}
 	EndGlobalSection
 EndGlobal
