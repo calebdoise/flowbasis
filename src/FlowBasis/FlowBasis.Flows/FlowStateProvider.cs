@@ -8,6 +8,11 @@ namespace FlowBasis.Flows
 {
     public abstract class FlowStateProvider
     {
+        public virtual string GetNewFlowStateId(Dictionary<string, string> fixedProperties)
+        {
+            return Guid.NewGuid().ToString("N");
+        }
+
         public abstract FlowStateHandle CreateFlowState(NewFlowStateOptions options);
 
         public abstract FlowStateHandle GetFlowState(

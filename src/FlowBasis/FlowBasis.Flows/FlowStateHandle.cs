@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 
 namespace FlowBasis.Flows
 {
-    public abstract class FlowStateHandle
+    public abstract class FlowStateHandle : IDisposable
     {
+        public abstract void Dispose();  
+
         public abstract string Id { get; }
 
         public abstract IDictionary<string, string> FixedProperties { get; }
@@ -27,7 +29,7 @@ namespace FlowBasis.Flows
 
     public class UpdateFlowStateOptions
     {
-        private object newProgressState;
+        private ProgressState newProgressState;
         private bool hasNewProgressState;
 
         private object newState;
@@ -36,7 +38,7 @@ namespace FlowBasis.Flows
         private DateTime? newExpiresAtUtc;
         private bool hasNewExpiresAtUtc;
 
-        public object NewProgressState
+        public ProgressState NewProgressState
         {
             get { return this.newProgressState; }
             set

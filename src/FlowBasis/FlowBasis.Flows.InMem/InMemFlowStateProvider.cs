@@ -1,4 +1,5 @@
 ﻿using FlowBasis.Flows;
+using FlowBasis.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,7 @@ namespace FlowBasis.Flows.InMem
     {
         private object syncObject = new Object();
         private Dictionary<string, InMemFlowStateData> idToFlowStateMap = new Dictionary<string, InMemFlowStateData>();
+
 
         public override FlowStateHandle CreateFlowState(NewFlowStateOptions options)
         {
@@ -151,7 +153,29 @@ namespace FlowBasis.Flows.InMem
                 return default(T);
             }
 
-            return FlowBasis.Json.JsonSerializers.Default.Parse<T>(value);
+            if (typeof(T) == typeof(Dictionary<string, string>))
+            {
+                var result = new Dictionary<string, string>();
+
+                // TODO: Support Dictionary<> type serialization/deserialization.
+                var jObject = FlowBasis.Json.JsonSerializers.Default.Parse<object>(value) as JObject;
+                if (jObject != null)
+                {
+                    foreach (var pair in (IDictionary<string, object>)jObject)
+                    {
+                        string key = pair.Key;
+                        string strValue = pair.Value?.ToString();
+
+                        result[key] = strValue;
+                    }
+                }
+
+                return (T)((object)result);
+            }
+            else
+            {
+                return FlowBasis.Json.JsonSerializers.Default.Parse<T>(value);
+            }
         }
 
 
@@ -166,6 +190,17 @@ namespace FlowBasis.Flows.InMem
             {
                 this.stateProvider = stateProvider;
                 this.flowStateData = flowStateData;
+            }
+
+            public override void Dispose()
+            {
+                if (this.flowStateData.LockCode != null)
+                {
+                    this.Update(new UpdateFlowStateOptions
+                    {
+                        UpdateLockCommand = UpdateLockCommand.ReleaseLock
+                    });
+                }
             }
 
             public override string Id
@@ -229,9 +264,6 @@ namespace FlowBasis.Flows.InMem
                     throw new ArgumentNullException(nameof(options));
                 }
 
-                // TODO: Need versioning handling so that update can only succeed if prior version numbers match
-                //   for progress state and/or state.
-
                 lock (this.stateProvider.syncObject)
                 {
                     InMemFlowStateData stateData;
@@ -266,16 +298,32 @@ namespace FlowBasis.Flows.InMem
                         
                         if (options.HasNewState)
                         {
+                            if (stateData.StateVersion != this.flowStateData.StateVersion)
+                            {
+                                throw new Exception("Flow state version on server does not match client view.");
+                            }
+
                             string newStateJson = this.stateProvider.ToJson(options.NewState);
                             this.flowStateData.StateJson = newStateJson;
                             stateData.StateJson = newStateJson;
+
+                            stateData.StateVersion++;
+                            this.flowStateData.StateVersion = stateData.StateVersion;
                         }                
 
                         if (options.HasNewProgressState)
                         {
+                            if (stateData.ProgressStateVersion != this.flowStateData.ProgressStateVersion)
+                            {
+                                throw new Exception("Flow state version on server does not match client view.");
+                            }
+
                             string newProgressStateJson = this.stateProvider.ToJson(options.NewProgressState);
                             this.flowStateData.ProgressStateJson = newProgressStateJson;
                             stateData.ProgressStateJson = newProgressStateJson;
+
+                            stateData.ProgressStateVersion++;
+                            this.flowStateData.ProgressStateVersion = stateData.ProgressStateVersion;
                         }
  
                         if (options.UpdateLockCommand != null)
@@ -313,6 +361,9 @@ namespace FlowBasis.Flows.InMem
                     {
                         this.stateProvider.idToFlowStateMap.Remove(this.flowStateData.Id);
                     }
+
+                    // If we delete it, then we clear LockCode so that we don't try to release lock in Dispose method.
+                    this.flowStateData.LockCode = null;
                 }
             }
         }
@@ -327,6 +378,9 @@ namespace FlowBasis.Flows.InMem
 
         public string ProgressStateJson { get; set; }
         public string StateJson { get; set; }
+
+        public long ProgressStateVersion { get; set; }
+        public long StateVersion { get; set; }
 
         public DateTime? ExpiresAtUtc { get; set; }
 
