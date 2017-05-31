@@ -374,12 +374,178 @@ END CATCH
                     cmd.Parameters.AddWithValue("releaseLock", options.UpdateLockCommand == UpdateLockCommand.ReleaseLock);
                     cmd.Parameters.AddWithValue("acquireOrExtendLock", options.UpdateLockCommand == UpdateLockCommand.AcquireOrExtendLock);
                     cmd.Parameters.AddWithValue("newExpiresAtUtc", options.NewExpiresAtUtc ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("lockDurationMs", options?.NewLockDuration?.TotalMilliseconds ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("newLockDurationMs", (int?)options?.NewLockDuration?.TotalMilliseconds ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("newProgressStateJson", newProgressStateJson ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("newStateJson", newStateJson ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("lockCode", this.flowStateData.LockCode ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("currentLockCode", this.flowStateData.LockCode ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("currentProgressStateVersion", this.flowStateData.ProgressStateVersion);
+                    cmd.Parameters.AddWithValue("currentStateVersion", this.flowStateData.StateVersion);
 
-                    throw new NotImplementedException();
+                    cmd.CommandText = @"
+BEGIN TRY
+    SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+    BEGIN TRANSACTION;
+    
+    DECLARE @progressStateJson nvarchar(max);
+    DECLARE @stateJson nvarchar(max);
+    DECLARE @progressStateVersion bigint;
+    DECLARE @stateVersion bigint;
+    DECLARE @expiresAtUtc datetime;
+    DECLARE @lockCode nvarchar(255);
+    DECLARE @lockExpiresAtUtc datetime;
+
+    DECLARE @utcNow datetime = GETUTCDATE();
+
+    SELECT        
+        @progressStateJson = ProgressStateJson,
+        @stateJson = StateJson,
+        @progressStateVersion = ProgressStateVersion,
+        @stateVersion = StateVersion,
+        @expiresAtUtc = ExpiresAtUtc,
+        @lockCode = LockCode,
+        @lockExpiresAtUtc = LockExpiresAtUtc
+    FROM Flows.FlowState WITH (UPDLOCK, HOLDLOCK, ROWLOCK)
+    WHERE Id = @flowStateId;
+
+    IF (@expiresAtUtc IS NOT NULL AND @utcNow > @expiresAtUtc)
+    BEGIN
+        -- Already expired.
+        DELETE FROM Flows.FlowState WHERE Id = @flowStateId;
+        SELECT 0, 'AlreadyExpired';
+    END
+    ELSE
+    BEGIN
+        IF ((@lockCode IS NOT NULL AND @lockCode != @currentLockCode)
+            AND (@lockExpiresAtUtc IS NULL OR @lockExpiresAtUtc > @utcNow))
+        BEGIN
+            -- Already locked elsewhere.
+            SELECT 0, 'AlreadyLocked';
+        END
+        ELSE
+        BEGIN
+            DECLARE @hadError int = 0;
+            DECLARE @errorCode nvarchar(255) = NULL;
+
+            IF (@releaseLock = 1)
+            BEGIN
+                SET @lockCode = null;
+                SET @lockExpiresAtUtc = null;
+            END
+            ELSE IF (@acquireOrExtendLock = 1)
+            BEGIN
+                IF (@currentLockCode IS NOT NULL)
+                    SET @lockCode = @currentLockCode;
+                ELSE
+                    SET @lockCode = NEWID();
+                
+--TODO: Fix lock expiration update.
+               -- IF (@newLockDurationMs IS NOT NULL)
+               --     SET @lockExpiresAtUtc = DATEADD(millisecond, @newLockDurationMs, @utcNow);
+                --ELSE
+               --     SET @lockExpiresAtUtc = NULL;
+            END            
+
+            IF (@hasNewProgressState = 1)
+            BEGIN
+                IF (@progressStateVersion = @currentProgressStateVersion)
+                BEGIN
+                    SET @progressStateJson = @newProgressStateJson;
+                    SET @progressStateVersion = @progressStateVersion + 1;
+                END
+                ELSE
+                BEGIN
+                    SET @hadError = 1;
+                    SET @errorCode = 'ProgressStateVersionMismatch';
+                END
+            END
+
+            IF (@hasNewState = 1)
+            BEGIN
+                IF (@stateVersion = @currentStateVersion)
+                BEGIN
+                    SET @stateJson = @newStateJson;
+                    SET @stateVersion = @stateVersion + 1;
+                END
+                ELSE
+                BEGIN
+                    SET @hadError = 1;
+                    SET @errorCode = 'StateVersionMismatch';
+                END
+            END
+
+            IF (@hadError = 0)
+            BEGIN
+                UPDATE Flows.FlowState SET 
+                    ProgressStateJson = @progressStateJson,
+                    ProgressStateVersion = @progressStateVersion,
+                    StateJson = @stateJson,
+                    StateVersion = @stateVersion,
+                    LockCode = @lockCode,
+                    LockExpiresAtUtc = @lockExpiresAtUtc,
+                    ExpiresAtUtc = @expiresAtUtc
+                WHERE Id = @flowStateId;
+
+                SELECT 1, @progressStateJson, @progressStateVersion, @stateJson, @stateVersion, @lockCode, @lockExpiresAtUtc, @expiresAtUtc
+            END
+            ELSE
+            BEGIN
+                SELECT 0, @errorCode;
+            END
+        END
+    END
+
+COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+	ROLLBACK TRANSACTION;
+	THROW;
+END CATCH
+";
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        Func<int, string> getString = (index) => !reader.IsDBNull(index) ? reader.GetString(index) : null;
+                        Func<int, DateTime?> getDateTime = (index) => !reader.IsDBNull(index) ? reader.GetDateTime(index) : (DateTime?)null;
+
+                        if (reader.Read())
+                        {
+                            int success = reader.GetInt32(0);
+                            if (success == 1)
+                            {
+                                string progressStateJson = getString(1);
+                                long progressStateVersion = reader.GetInt64(2);
+                                string stateJson = getString(3);
+                                long stateVersion = reader.GetInt64(4);
+                                string lockCode = getString(5);
+                                DateTime? lockExpiresAtUtc = getDateTime(6);
+                                DateTime? expiresAtUtc = getDateTime(7);
+
+                                this.flowStateData.ProgressStateJson = progressStateJson;
+                                this.flowStateData.ProgressStateVersion = progressStateVersion;
+                                this.flowStateData.StateJson = stateJson;
+                                this.flowStateData.StateVersion = stateVersion;
+                                this.flowStateData.ExpiresAtUtc = expiresAtUtc;
+                                this.flowStateData.LockCode = lockCode;
+                                this.flowStateData.LockExpiresAtUtc = lockExpiresAtUtc;                                
+                            }
+                            else if (success == 0)
+                            {
+                                string errorCode = getString(1);
+
+                                // TODO: Create a TryGetFlowState that returns info about the attempt to get the flow state.
+
+                                throw new Exception("Error: " + errorCode);
+                            }
+                            else
+                            {
+                                throw new Exception("Expected 1 or 0 for success flag.");
+                            }
+                        }
+                        else
+                        {
+                            throw new Exception("Expected at least one result row.");
+                        }
+                    }                        
                 }
             }
 
