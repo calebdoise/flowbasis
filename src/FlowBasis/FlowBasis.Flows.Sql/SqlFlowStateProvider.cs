@@ -1,6 +1,7 @@
 ﻿using FlowBasis.Json;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
@@ -374,12 +375,14 @@ END CATCH
                     cmd.Parameters.AddWithValue("releaseLock", options.UpdateLockCommand == UpdateLockCommand.ReleaseLock);
                     cmd.Parameters.AddWithValue("acquireOrExtendLock", options.UpdateLockCommand == UpdateLockCommand.AcquireOrExtendLock);
                     cmd.Parameters.AddWithValue("newExpiresAtUtc", options.NewExpiresAtUtc ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("newLockDurationMs", (int?)options?.NewLockDuration?.TotalMilliseconds ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("newProgressStateJson", newProgressStateJson ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("newStateJson", newStateJson ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("currentLockCode", this.flowStateData.LockCode ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("currentProgressStateVersion", this.flowStateData.ProgressStateVersion);
                     cmd.Parameters.AddWithValue("currentStateVersion", this.flowStateData.StateVersion);
+
+                    var paramNewLockDurationMs = cmd.Parameters.Add("newLockDurationMs", SqlDbType.Int);
+                    paramNewLockDurationMs.Value = (int?)options?.NewLockDuration?.TotalMilliseconds ?? (object)DBNull.Value;
 
                     cmd.CommandText = @"
 BEGIN TRY
@@ -438,11 +441,10 @@ BEGIN TRY
                 ELSE
                     SET @lockCode = NEWID();
                 
---TODO: Fix lock expiration update.
-               -- IF (@newLockDurationMs IS NOT NULL)
-               --     SET @lockExpiresAtUtc = DATEADD(millisecond, @newLockDurationMs, @utcNow);
-                --ELSE
-               --     SET @lockExpiresAtUtc = NULL;
+               IF (@newLockDurationMs IS NOT NULL)
+                    SET @lockExpiresAtUtc = DATEADD(millisecond, @newLockDurationMs, @utcNow);
+               ELSE
+                    SET @lockExpiresAtUtc = NULL;
             END            
 
             IF (@hasNewProgressState = 1)
@@ -471,6 +473,11 @@ BEGIN TRY
                     SET @hadError = 1;
                     SET @errorCode = 'StateVersionMismatch';
                 END
+            END
+
+            IF (@hasNewExpiresAtUtc = 1)
+            BEGIN
+                SET @expiresAtUtc = @newExpiresAtUtc;
             END
 
             IF (@hadError = 0)

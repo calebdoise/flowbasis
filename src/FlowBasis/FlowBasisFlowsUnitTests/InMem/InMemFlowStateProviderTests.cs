@@ -25,6 +25,9 @@ namespace FlowBasisFlowsUnitTests.InMem
         /// </summary>        
         internal static void Test_FlowStateProvider_Basics(FlowStateProvider stateProvider)
         {
+            var futureDate = DateTime.UtcNow.AddDays(1);
+            var futureDate2 = DateTime.UtcNow.AddDays(2);
+
             var stateHandle = stateProvider.CreateFlowState(new NewFlowStateOptions
             {
                 FixedProperties = new Dictionary<string, string>()
@@ -32,7 +35,8 @@ namespace FlowBasisFlowsUnitTests.InMem
                     { "Task", "Something1" },
                     { "CreatedBy", "Foo" }
                 },
-                StateJson = "{\"hello\": \"world\"}"
+                StateJson = "{\"hello\": \"world\"}", 
+                ExpiresAtUtc = futureDate               
             });
 
             var stateId = stateHandle.Id;
@@ -41,7 +45,7 @@ namespace FlowBasisFlowsUnitTests.InMem
             {
                 Lock = true,
                 LockDuration = TimeSpan.FromDays(1)
-            });
+            });           
 
             Assert.AreEqual("Something1", retrievedState.FixedProperties["Task"]);
             Assert.AreEqual("Foo", retrievedState.FixedProperties["CreatedBy"]);
@@ -51,6 +55,8 @@ namespace FlowBasisFlowsUnitTests.InMem
 
             dynamic newState = new FlowBasis.Json.JObject();
             newState.hello = "newworld";
+
+            Assert.IsTrue(Math.Abs((retrievedState.ExpiresAtUtc.Value - futureDate).TotalSeconds) < 2);
 
             retrievedState.Update(new UpdateFlowStateOptions
             {
@@ -62,6 +68,7 @@ namespace FlowBasisFlowsUnitTests.InMem
                     Message = "msg",
                     StatusFlag = 0
                 },
+                NewExpiresAtUtc = futureDate2,
                 UpdateLockCommand = UpdateLockCommand.ReleaseLock
             });
 
@@ -75,6 +82,8 @@ namespace FlowBasisFlowsUnitTests.InMem
             dynamic state2 = retrievedState2.GetState<object>();
             Assert.AreEqual("newworld", state2.hello);
             Assert.AreEqual("world", state.hello);
+
+            Assert.IsTrue(Math.Abs((retrievedState2.ExpiresAtUtc.Value - futureDate2).TotalSeconds) < 2);
 
             var progressState2 = retrievedState2.ProgressState;
             Assert.AreEqual(4, progressState2.Current);
