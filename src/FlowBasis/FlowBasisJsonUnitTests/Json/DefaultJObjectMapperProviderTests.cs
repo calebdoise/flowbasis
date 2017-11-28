@@ -30,6 +30,30 @@ namespace FlowBasisJsonUnitTests.Json
         }
 
 
+        [TestMethod]
+        public void Test_StringInputTransform()
+        {
+            DefaultJObjectMapperProvider mapperProvider = new DefaultJObjectMapperProvider(
+                new DefaultJObjectMapperProviderOptions
+                {
+                    StringInputTransform = (str) =>
+                    {
+                        return "TRANSFORMED" + (str ?? "");
+                    }
+                });
+            
+            var jsonSerializer = new JsonSerializationService(() => new JObjectRootMapper(mapperProvider));
+
+            // TestObject should get converted into reversed case string when serialized with custom mapper.
+            string json = jsonSerializer.Stringify(new TestObject() { SomeStr = "Abc" });
+            Assert.AreEqual("{\"someStr\":\"Abc\"}", json);
+
+            // And it should be deserialized back into TestObject from a string.
+            var result = jsonSerializer.Parse<TestObject>(json);
+            Assert.AreEqual("TRANSFORMEDAbc", result.SomeStr);
+        }
+
+
         public class TestObject
         {
             public string SomeStr { get; set; }
