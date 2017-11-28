@@ -14,6 +14,8 @@ namespace FlowBasis.Json
         private static Type s_typeOfObject = typeof(object);
         private static Type s_typeOfGenericIList = typeof(IList<>);
         private static Type s_typeOfGenericList = typeof(List<>);
+        private static Type s_typeOfGenericIDictionary = typeof(IDictionary<,>);
+        private static Type s_typeOfGenericDictionary = typeof(Dictionary<,>);
         private static Type s_typeOfGenericIEnumerable = typeof(IEnumerable<>);
         private static Type s_typeOfGenericNullable = typeof(Nullable<>);
         private static Type s_typeOfString = typeof(string);
@@ -101,7 +103,9 @@ namespace FlowBasis.Json
             {
                 return this.primitiveMapper;                
             }
-            else if (typeof(IDictionary).IsAssignableFrom(type) || typeof(IDictionary<string, object>).IsAssignableFrom(type))
+            else if (typeof(IDictionary).IsAssignableFrom(type) 
+                || typeof(IDictionary<string, object>).IsAssignableFrom(type)
+                || typeof(IDictionary<string, string>).IsAssignableFrom(type))
             {
                 return this.dictionaryMapper;
             }
@@ -185,6 +189,10 @@ namespace FlowBasis.Json
             else if (genericTypeDefinition != null && s_typeOfGenericIEnumerable == genericTypeDefinition)
             {
                 return this.listMapper;
+            }
+            else if (genericTypeDefinition != null && (s_typeOfGenericDictionary == genericTypeDefinition || s_typeOfGenericIDictionary == genericTypeDefinition))
+            {
+                return this.dictionaryMapper;
             }
             else if (targetType == typeof(object) && (jObjectType.IsPrimitive || jObjectType == typeof(string) || jObjectType == typeof(decimal) || jObjectType == typeof(DateTime)))
             {

@@ -123,6 +123,66 @@ namespace FlowBasisJsonUnitTests.Json
             Assert.AreEqual(42, result.SomeNumber);
         }
 
+
+        [TestMethod]
+        public void Test_Serialize_Dictionary_Members()
+        {
+            // Test with Dictionary<,>.
+            var testGenericDictionary = new TestObjectWithDictionary
+            {
+                GenericDictionary = new Dictionary<string, object>
+                {
+                    { "hello", 42 }
+                }
+            };
+
+            string json = JsonSerializers.Default.Stringify(testGenericDictionary);
+
+            Assert.AreEqual("{\"genericDictionary\":{\"hello\":42}}", json);
+
+            var resultGenericDictionary = JsonSerializers.Default.Parse<TestObjectWithDictionary>(json);
+
+            Assert.IsNotNull(resultGenericDictionary?.GenericDictionary);
+            Assert.AreEqual((long)42, resultGenericDictionary.GenericDictionary["hello"]);
+
+            // Test with IDictionary<,>.
+            var testGenericInterfaceDictionary = new TestObjectWithDictionary
+            {
+                GenericInterfaceDictionary = new Dictionary<string, object>
+                {
+                    { "hello", 42 }
+                }
+            };
+
+            json = JsonSerializers.Default.Stringify(testGenericInterfaceDictionary);
+
+            Assert.AreEqual("{\"genericInterfaceDictionary\":{\"hello\":42}}", json);
+
+            var resultGenericInterfaceDictionary = JsonSerializers.Default.Parse<TestObjectWithDictionary>(json);
+
+            Assert.IsNotNull(resultGenericInterfaceDictionary?.GenericInterfaceDictionary);
+            Assert.AreEqual((long)42, resultGenericInterfaceDictionary.GenericInterfaceDictionary["hello"]);
+
+            // Test with IDictionary<string,string>.
+            var testStringStringDictionary = new TestObjectWithDictionary
+            {
+                StringStringDictionary = new Dictionary<string, string>
+                {
+                    { "hello", "world" }
+                }
+            };
+
+            json = JsonSerializers.Default.Stringify(testStringStringDictionary);
+
+            Assert.AreEqual("{\"stringStringDictionary\":{\"hello\":\"world\"}}", json);
+
+            var resultStringStringDictionary = JsonSerializers.Default.Parse<TestObjectWithDictionary>(json);
+
+            Assert.IsNotNull(resultStringStringDictionary?.StringStringDictionary);
+            Assert.AreEqual("world", resultStringStringDictionary.StringStringDictionary["hello"]);
+        }
+
+
         public class TestObject
         {
             public int SomeNumber { get; set; }
@@ -143,6 +203,13 @@ namespace FlowBasisJsonUnitTests.Json
 
             [FlowBasisJsonUnitTests.Json.JsonSerializationServiceTests.JsonIgnore]
             public int NumberThatWillNotBeSerialized { get; set; }
+        }
+
+        public class TestObjectWithDictionary
+        {
+            public Dictionary<string, object> GenericDictionary { get; set; }
+            public IDictionary<string, object> GenericInterfaceDictionary { get; set; }
+            public Dictionary<string, string> StringStringDictionary { get; set; }
         }
 
         public enum TestEnumColors : int

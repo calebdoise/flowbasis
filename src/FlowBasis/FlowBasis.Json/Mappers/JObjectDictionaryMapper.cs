@@ -9,6 +9,9 @@ namespace FlowBasis.Json.Mappers
 {
     public class JObjectDictionaryMapper : IJObjectMapper
     {
+        private static Type s_typeOfGenericIDictionary = typeof(IDictionary<,>);
+        private static Type s_typeOfGenericDictionary = typeof(Dictionary<,>);
+
         public object ToJObject(object instance, IJObjectRootMapper rootMapper)
         {
             var result = new JObject();
@@ -38,8 +41,44 @@ namespace FlowBasis.Json.Mappers
         }
 
         public object FromJObject(object jObject, Type targetType, IJObjectRootMapper rootMapper)
-        {
-            throw new NotImplementedException();
+        {            
+            if (jObject == null)
+            {
+                return null;
+            }
+
+            bool isGenericType = targetType.IsGenericType;
+            Type genericType = null;
+            if (isGenericType)
+            {
+                genericType = targetType.GetGenericTypeDefinition();
+            }
+
+            Type keyType;
+            Type valueType;
+            if (isGenericType && genericType == s_typeOfGenericDictionary || genericType == s_typeOfGenericIDictionary)
+            {                
+                keyType = targetType.GetGenericArguments()[0];
+                valueType = targetType.GetGenericArguments()[1];                
+
+                Type dictionaryType = s_typeOfGenericDictionary.MakeGenericType(keyType, valueType);
+
+                IDictionary dictionary = (IDictionary)Activator.CreateInstance(dictionaryType);
+
+                if (jObject is IDictionary<string, object> jObjectAsDictionary)
+                {
+                    foreach (var pair in jObjectAsDictionary)
+                    {
+                        dictionary[pair.Key] = pair.Value;
+                    }
+                }
+
+                return dictionary;
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }
