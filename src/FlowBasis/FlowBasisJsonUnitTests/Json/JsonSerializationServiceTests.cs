@@ -180,6 +180,26 @@ namespace FlowBasisJsonUnitTests.Json
 
             Assert.IsNotNull(resultStringStringDictionary?.StringStringDictionary);
             Assert.AreEqual("world", resultStringStringDictionary.StringStringDictionary["hello"]);
+
+            // Test with IDictionary<string,TestObject>.
+            var testStringClassDictionary = new TestObjectWithDictionary
+            {
+                StringClassDictionary = new Dictionary<string, TestObject>
+                {
+                    { "hello", new TestObject { SomeNumber = 45, SomeString = "blah" } }
+                }
+            };
+
+            json = JsonSerializers.Default.Stringify(testStringClassDictionary);
+
+            Assert.AreEqual("{\"stringClassDictionary\":{\"hello\":{\"someNumber\":45,\"someString\":\"blah\"}}}", json);
+
+            var resultStringClassDictionary = JsonSerializers.Default.Parse<TestObjectWithDictionary>(json);
+
+            Assert.IsNotNull(resultStringClassDictionary?.StringClassDictionary);
+            TestObject resultTestClass = resultStringClassDictionary.StringClassDictionary["hello"];
+            Assert.AreEqual(45, resultTestClass.SomeNumber);
+            Assert.AreEqual("blah", resultTestClass.SomeString);
         }
 
 
@@ -210,6 +230,7 @@ namespace FlowBasisJsonUnitTests.Json
             public Dictionary<string, object> GenericDictionary { get; set; }
             public IDictionary<string, object> GenericInterfaceDictionary { get; set; }
             public Dictionary<string, string> StringStringDictionary { get; set; }
+            public Dictionary<string, TestObject> StringClassDictionary { get; set; }
         }
 
         public enum TestEnumColors : int

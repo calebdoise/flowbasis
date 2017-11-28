@@ -69,7 +69,8 @@ namespace FlowBasis.Json.Mappers
                 {
                     foreach (var pair in jObjectAsDictionary)
                     {
-                        dictionary[pair.Key] = pair.Value;
+                        object processedValue = rootMapper.FromJObject(pair.Value, valueType);
+                        dictionary[pair.Key] = processedValue;
                     }
                 }
 
