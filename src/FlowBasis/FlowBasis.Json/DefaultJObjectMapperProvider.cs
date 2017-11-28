@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Collections;
+using FlowBasis.Json.Mappers;
 
 namespace FlowBasis.Json
 {
@@ -10,11 +11,14 @@ namespace FlowBasis.Json
     {
         private static IdentityMapper s_identityMapper = new IdentityMapper();
 
+        private static Type s_typeOfObject = typeof(object);
         private static Type s_typeOfGenericIList = typeof(IList<>);
         private static Type s_typeOfGenericList = typeof(List<>);
         private static Type s_typeOfGenericIEnumerable = typeof(IEnumerable<>);
         private static Type s_typeOfGenericNullable = typeof(Nullable<>);
-
+        private static Type s_typeOfString = typeof(string);
+        private static Type s_typeOfDecimal = typeof(decimal);
+        private static Type s_typeOfDateTime = typeof(DateTime);
 
         private DefaultJObjectMapperProviderOptions options;
         private DefaultClassMappingOptions defaultClassMappingOptions;
@@ -22,6 +26,7 @@ namespace FlowBasis.Json
         private Dictionary<Type, IJObjectMapper> typeToCustomMapperMap = new Dictionary<Type, IJObjectMapper>();
 
         private JObjectPrimitiveMapper primitiveMapper = new JObjectPrimitiveMapper();
+        private IJObjectMapper stringMapper;
         private JObjectArrayMapper arrayMapper = new JObjectArrayMapper();
         private JObjectListMapper listMapper = new JObjectListMapper();
         private JObjectDictionaryMapper dictionaryMapper = new JObjectDictionaryMapper();
@@ -40,6 +45,15 @@ namespace FlowBasis.Json
             if (this.defaultClassMappingOptions == null)
             {
                 this.defaultClassMappingOptions = new DefaultClassMappingOptions();
+            }
+
+            if (this.options.StringInputTransform != null)
+            {
+                this.stringMapper = new StringTransformMapper(this.options.StringInputTransform);
+            }
+            else
+            {
+                this.stringMapper = this.primitiveMapper;
             }
         }
 
@@ -79,9 +93,13 @@ namespace FlowBasis.Json
                 Type valueType = type.GetGenericArguments()[0];
                 return this.ResovleJObjectMapperForInstanceType(valueType);
             }
-            else if (type.IsPrimitive || type == typeof(string) || type == typeof(decimal) || type == typeof(DateTime))
+            else if (type == s_typeOfString)
             {
-                return this.primitiveMapper;
+                return this.stringMapper;
+            }
+            else if (type.IsPrimitive || type == s_typeOfDecimal || type == s_typeOfDateTime)
+            {
+                return this.primitiveMapper;                
             }
             else if (typeof(IDictionary).IsAssignableFrom(type) || typeof(IDictionary<string, object>).IsAssignableFrom(type))
             {
@@ -123,7 +141,7 @@ namespace FlowBasis.Json
                 return registeredMapper;
             }
 
-            if (targetType == typeof(object))
+            if (targetType == s_typeOfObject)
             {
                 return s_identityMapper;
             }
@@ -140,9 +158,13 @@ namespace FlowBasis.Json
                 Type valueType = targetType.GetGenericArguments()[0];
                 return this.ResovleJObjectMapperForJObject(jObject, valueType);
             }
-            else if (targetType.IsPrimitive || targetType == typeof(string) || targetType == typeof(decimal) || targetType == typeof(DateTime))
+            else if (targetType == s_typeOfString)
             {
-                return this.primitiveMapper;
+                return this.stringMapper;
+            }
+            else if (targetType.IsPrimitive || targetType == s_typeOfDecimal || targetType == s_typeOfDateTime)
+            {               
+                return this.primitiveMapper;                
             }
             else if (targetType.IsArray)
             {
@@ -214,291 +236,12 @@ namespace FlowBasis.Json
     public class DefaultJObjectMapperProviderOptions
     { 
         public DefaultClassMappingOptions DefaultClassMappingOptions { get; set; }
+
+        /// <summary>
+        /// When parsing JSON, this method will be called transform the input string into the final value.
+        /// </summary>
+        public Func<string, string> StringInputTransform { get; set; }
     }
 
-
-    public class JObjectPrimitiveMapper : IJObjectMapper
-    {
-        public object ToJObject(object instance, IJObjectRootMapper rootMapper)
-        {
-            return instance;
-        }
-
-        public object FromJObject(object jObject, Type targetType, IJObjectRootMapper rootMapper)
-        {
-            return CoercePrimitive(jObject, targetType);
-        }
-
-        private object CoercePrimitive(object value, Type targetType)
-        {
-            Type elementType = targetType;
-            if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Nullable<>))
-            {
-                elementType = targetType.GetGenericArguments()[0];
-
-                if (value == null)
-                {
-                    return null;
-                }
-                else if (value is string && ((string)value == ""))
-                {
-                    return null;
-                }
-            }
-
-            if (elementType == typeof(decimal))
-            {
-                return Convert.ToDecimal(value);
-            }
-            else if (elementType == typeof(float))
-            {
-                return Convert.ToSingle(value);
-            }
-            else if (elementType == typeof(double))
-            {
-                return Convert.ToDouble(value);
-            }
-            else if (elementType == typeof(Int32))
-            {
-                return Convert.ToInt32(value);
-            }
-            else if (elementType == typeof(Int64))
-            {
-                return Convert.ToInt64(value);
-            }
-            else if (elementType == typeof(byte))
-            {
-                return Convert.ToByte(value);
-            }
-            else if (elementType == typeof(bool))
-            {
-                return Convert.ToBoolean(value);
-            }
-            else if (elementType == typeof(string))
-            {
-                return value.ToString();
-            }
-            else
-            {
-                return value;
-            }
-        }
-    }
-
-
-    public class JObjectArrayMapper : IJObjectMapper
-    {
-        public object ToJObject(object instance, IJObjectRootMapper rootMapper)
-        {
-            Array valueArray = (Array)instance;
-            ArrayList list = new ArrayList(valueArray.Length);
-
-            foreach (var entry in valueArray)
-            {
-                object entryJObject = rootMapper.ToJObject(entry);
-                list.Add(entryJObject);
-            }
-
-            return list;
-        }
-
-        public object FromJObject(object jObject, Type targetType, IJObjectRootMapper rootMapper)
-        {
-            IList sourceList = jObject as IList;
-            if (sourceList != null)
-            {
-                Type elementType = targetType.GetElementType();
-                Array result = Array.CreateInstance(elementType, sourceList.Count);
-                int entryCo = 0;
-                foreach (var entry in sourceList)
-                {
-                    object processedEntry = rootMapper.FromJObject(entry, elementType);
-                    if (processedEntry != null)
-                    {
-                        result.SetValue(processedEntry, entryCo);
-                    }
-
-                    entryCo++;
-                }
-
-                return result;
-            }
-            else
-            {
-                throw new ArgumentException("jObject does implement IList: " + jObject.GetType().FullName, "jObject");
-            }
-        }
-    }
-
-
-
-    public class JObjectDictionaryMapper : IJObjectMapper
-    {
-        public object ToJObject(object instance, IJObjectRootMapper rootMapper)
-        {
-            var result = new JObject();
-
-            if (instance is Dictionary<string, object>)
-            {
-                foreach (var pair in (Dictionary<string, object>)instance)
-                {
-                    object processedEntry = rootMapper.ToJObject(pair.Value);
-                    result[pair.Key] = processedEntry;
-                }
-            }
-            else if (instance is System.Collections.IDictionary)
-            {
-                foreach (DictionaryEntry pair in (System.Collections.IDictionary)instance)
-                {
-                    object processedEntry = rootMapper.ToJObject(pair.Value);
-                    result[pair.Key.ToString()] = processedEntry;
-                }
-            }
-            else
-            {
-                throw new Exception("Unsupported type: " + instance.GetType());
-            }
-
-            return result;
-        }
-
-        public object FromJObject(object jObject, Type targetType, IJObjectRootMapper rootMapper)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-
-    public class JObjectListMapper : IJObjectMapper
-    {
-        private static Type s_typeOfGenericIList = typeof(IList<>);
-        private static Type s_typeOfGenericList = typeof(List<>);
-        private static Type s_typeOfGenericIEnumerable = typeof(IEnumerable<>);
-
-        public object ToJObject(object instance, IJObjectRootMapper rootMapper)
-        {
-            IList list = (IList)instance;
-
-            ArrayList result = new ArrayList(list.Count);
-            foreach (var entry in list)
-            {
-                object processedEntry = rootMapper.ToJObject(entry);
-                result.Add(processedEntry);
-            }
-
-            return result;
-        }
-
-        public object FromJObject(object jObject, Type targetType, IJObjectRootMapper rootMapper)
-        {
-            IList sourceList = jObject as IList;
-            if (sourceList != null)
-            {
-                bool useGenericList;
-                Type targetTypeToUse;
-
-                Type elementType;
-                if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == s_typeOfGenericList)
-                {
-                    useGenericList = true;
-                    elementType = targetType.GetGenericArguments()[0];
-                    targetTypeToUse = targetType;
-                }
-                else if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == s_typeOfGenericIList)
-                {
-                    useGenericList = true;
-                    elementType = targetType.GetGenericArguments()[0];
-                    targetTypeToUse = s_typeOfGenericList.MakeGenericType(elementType);
-                }
-                else if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == s_typeOfGenericIEnumerable)
-                {
-                    useGenericList = true;
-                    elementType = targetType.GetGenericArguments()[0];
-                    targetTypeToUse = s_typeOfGenericList.MakeGenericType(elementType);
-                }
-                else
-                {
-                    useGenericList = false;
-                    elementType = typeof(object);
-                    targetTypeToUse = targetType;
-                }
-
-                IList result;
-                if (useGenericList)
-                {
-                    result = (IList)Activator.CreateInstance(targetTypeToUse);
-                }
-                else
-                {
-                    result = new ArrayList();
-                }
-
-                foreach (var entry in sourceList)
-                {
-                    object processedEntry = rootMapper.FromJObject(entry, elementType);
-                    result.Add(processedEntry);
-                }
-
-                return result;
-            }
-            else
-            {
-                throw new ArgumentException("jObject does implement IList: " + jObject.GetType().FullName, "jObject");
-            }
-        }
-
-    }
-
-
-
-    public class JObjectEnumMapper : IJObjectMapper
-    {
-        public object ToJObject(object instance, IJObjectRootMapper rootMapper)
-        {
-            if (instance == null)
-            {
-                return null;
-            }
-
-            return instance.ToString();
-        }
-
-        public object FromJObject(object jObject, Type targetType, IJObjectRootMapper rootMapper)
-        {
-            if (jObject == null)
-            {
-                return null;
-            }
-
-            Type enumType = null;
-            if (targetType.IsEnum)
-            {
-                enumType = targetType;
-            }
-            else if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Nullable<>))
-            {
-                Type valueType = targetType.GetGenericArguments()[0];
-                if (valueType.IsEnum)
-                {
-                    enumType = valueType;
-                }
-            }
-
-            if (enumType == null)
-            {
-                throw new Exception("targetType is not enum type: " + targetType.FullName);
-            }
-
-            try
-            {
-                object value = Enum.Parse(enumType, jObject.ToString());
-                return value;
-            }
-            catch
-            {
-                // TODO: provide option for how to handle undefined value. 
-                return null;
-            }
-        }
-    }
+    
 }

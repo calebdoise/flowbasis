@@ -60,8 +60,14 @@
     <Compile Include="JsonSerializers.cs" />
     <Compile Include="JsonTypeAttribute.cs" />
     <Compile Include="Mappers\DateTimeAsEpochMillisecondsMapper.cs" />
+    <Compile Include="Mappers\JObjectArrayMapper.cs" />
+    <Compile Include="Mappers\JObjectDictionaryMapper.cs" />
+    <Compile Include="Mappers\JObjectEnumMapper.cs" />
+    <Compile Include="Mappers\JObjectListMapper.cs" />
+    <Compile Include="Mappers\JObjectPrimitiveMapper.cs" />
     <Compile Include="Mappers\NumberAsStringMapper.cs" />
     <Compile Include="Mappers\EnumAsIntegerMapper.cs" />
+    <Compile Include="Mappers\StringTransformMapper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
