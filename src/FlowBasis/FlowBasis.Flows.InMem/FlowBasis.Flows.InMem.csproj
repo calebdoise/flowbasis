@@ -2,14 +2,14 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
-    <RootNamespace>FlowBasis.Json.Messages</RootNamespace>
-    <AssemblyName>FlowBasis.Json.Messages</AssemblyName>
+    <RootNamespace>FlowBasis.Flows.InMem</RootNamespace>
+    <AssemblyName>FlowBasis.Flows.InMem</AssemblyName>
     <Version>3.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\FlowBasis.Flows\FlowBasis.Flows.csproj" />
     <ProjectReference Include="..\FlowBasis.Json\FlowBasis.Json.csproj" />
-    <ProjectReference Include="..\FlowBasis.SimpleQueues\FlowBasis.SimpleQueues.csproj" />
   </ItemGroup>
 
 </Project>
