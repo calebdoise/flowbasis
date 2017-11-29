@@ -8,6 +8,7 @@ namespace FlowBasis.Expressions
     {
         private HashSet<string> unary_ops = new HashSet<string>();
         private Dictionary<string, int> binary_ops = new Dictionary<string, int>();
+        private Dictionary<string, object> literals = new Dictionary<string, object>();
 
         public JsepParser()
         {
@@ -37,13 +38,32 @@ namespace FlowBasis.Expressions
             this.binary_ops["*"] = 10;
             this.binary_ops["/"] = 10;
             this.binary_ops["%"] = 10;
+
+            this.literals["true"] = true;
+            this.literals["false"] = false;
+            this.literals["null"] = null;
         }
 
         private static void ThrowError(string message, int index)
         {
             throw new Exception(message + " at character " + index);
         }
-       
+
+        public void AddUnaryOp(string opName)
+        {
+            this.unary_ops.Add(opName);
+        }
+
+        public void AddBinaryOp(string opName, int precedence)
+        {
+            this.binary_ops[opName] = precedence;
+        }
+
+        public void AddLiteral(string name, object value)
+        {
+            this.literals[name] = value;
+        }
+
         public JsepNode Parse(string expr)
         {                        
             int PERIOD_CODE = 46, // '.'
@@ -71,14 +91,7 @@ namespace FlowBasis.Expressions
 
             int max_unop_len = getMaxKeyLen(this.unary_ops);
             int max_binop_len = getMaxKeyLen(this.binary_ops.Keys);
-
-            Dictionary<string, object> literals = new Dictionary<string, object>()
-            {
-                { "true", true },
-                { "false", false },
-                { "null", null }
-            };
-
+     
             string this_str = "this";
 
             int binaryPrecedence(string op_val)

@@ -7,8 +7,17 @@ namespace FlowBasis.Expressions
     public class JsepNode
     {
         public JsepNodeType Type { get; set; }
+
+        /// <summary>
+        /// Name of an identifier.
+        /// </summary>
         public string Name { get; set; }
+
+        /// <summary>
+        /// Precedence applied to the node in parsing phase.
+        /// </summary>
         public int? Prec { get; set; }
+
         public object Value { get; set; }
         public object Raw { get; set; }
 
@@ -41,7 +50,13 @@ namespace FlowBasis.Expressions
 
         public bool? Computed { get; set; }
 
+        /// <summary>
+        /// For a member expression, this denotes the object instance containing the property.
+        /// </summary>
         public JsepNode Object { get; set; }
+        /// <summary>
+        /// For a member expression, this denotes the referenced property or method on the object instance.
+        /// </summary>
         public JsepNode Property { get; set; }
     }
 }

@@ -105,11 +105,12 @@ namespace FlowBasisExpressionsUnitTests
             var jsepParser = new JsepParser();
 
             // [1, 2, "hello", -pi]
-            JsepNode result = jsepParser.Parse("[23, 6, \"hello\", -pi]");
+            JsepNode result = jsepParser.Parse("[23, 6, \"hello\", -pi, null]");
 
             Assert.AreEqual(JsepNodeType.ArrayExpression, result.Type);
 
-            Assert.AreEqual(4, result.Elements.Count);
+            Assert.AreEqual(5, result.Elements.Count);
+
             AssertNodeIsLiteralNumber(result.Elements[0], 23);
             AssertNodeIsLiteralNumber(result.Elements[1], 6);
             AssertNodeIsLiteralString(result.Elements[2], "hello");
@@ -118,6 +119,10 @@ namespace FlowBasisExpressionsUnitTests
             Assert.AreEqual(JsepNodeType.UnaryExpression, negPi.Type);
             Assert.AreEqual("-", negPi.Operator);
             AssertNodeIsNamedIdentifier(negPi.Argument, "pi");
+
+            var nullElement = result.Elements[4];
+            Assert.AreEqual(JsepNodeType.Literal, nullElement.Type);
+            Assert.AreEqual(null, nullElement.Value);
         }
 
 
