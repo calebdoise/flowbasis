@@ -99,6 +99,61 @@ namespace FlowBasisExpressionsUnitTests
         }
 
 
+        [TestMethod]
+        public void Test_Basic_Array_Expressions()
+        {
+            var jsepParser = new JsepParser();
+
+            // [1, 2, "hello", -pi]
+            JsepNode result = jsepParser.Parse("[23, 6, \"hello\", -pi]");
+
+            Assert.AreEqual(JsepNodeType.ArrayExpression, result.Type);
+
+            Assert.AreEqual(4, result.Elements.Count);
+            AssertNodeIsLiteralNumber(result.Elements[0], 23);
+            AssertNodeIsLiteralNumber(result.Elements[1], 6);
+            AssertNodeIsLiteralString(result.Elements[2], "hello");
+
+            var negPi = result.Elements[3];
+            Assert.AreEqual(JsepNodeType.UnaryExpression, negPi.Type);
+            Assert.AreEqual("-", negPi.Operator);
+            AssertNodeIsNamedIdentifier(negPi.Argument, "pi");
+        }
+
+
+        [TestMethod]
+        public void Test_Basic_Compound_Expressions()
+        {
+            var jsepParser = new JsepParser();
+
+            // 10 + -2; this.x - 1 == false; 4 <= 8;
+            JsepNode result = jsepParser.Parse("10 + -2; this.x == false; 4 && 8;");
+
+            Assert.AreEqual(JsepNodeType.Compound, result.Type);
+            Assert.AreEqual(3, result.Body.Count);
+
+            Assert.AreEqual(JsepNodeType.BinaryExpression, result.Body[0].Type);
+            Assert.AreEqual("+", result.Body[0].Operator);
+            AssertNodeIsLiteralNumber(result.Body[0].Left, 10);
+            Assert.AreEqual(JsepNodeType.UnaryExpression, result.Body[0].Right.Type);
+            Assert.AreEqual("-", result.Body[0].Right.Operator);
+            AssertNodeIsLiteralNumber(result.Body[0].Right.Argument, 2);
+
+            Assert.AreEqual(JsepNodeType.BinaryExpression, result.Body[1].Type);
+            Assert.AreEqual("==", result.Body[1].Operator);
+            Assert.AreEqual(JsepNodeType.MemberExpression, result.Body[1].Left.Type);
+            Assert.AreEqual(JsepNodeType.ThisExpression, result.Body[1].Left.Object.Type);
+            AssertNodeIsNamedIdentifier(result.Body[1].Left.Property, "x");
+            Assert.AreEqual(JsepNodeType.Literal, result.Body[1].Right.Type);
+            Assert.AreEqual(false, result.Body[1].Right.Value);
+
+            Assert.AreEqual(JsepNodeType.LogicalExpression, result.Body[2].Type);
+            Assert.AreEqual("&&", result.Body[2].Operator);
+            AssertNodeIsLiteralNumber(result.Body[2].Left, 4);
+            AssertNodeIsLiteralNumber(result.Body[2].Right, 8);
+        }
+
+
         private void AssertNodeIsLiteralNumber(JsepNode node, decimal expectedNumber)
         {
             Assert.AreEqual(JsepNodeType.Literal, node.Type);
