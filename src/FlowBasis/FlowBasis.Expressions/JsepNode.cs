@@ -26,7 +26,17 @@ namespace FlowBasis.Expressions
         public JsepNode Left { get; set; }
         public JsepNode Right { get; set; }
 
+        /// <summary>
+        /// For a conditional expression (i.e. "3 > 4 ? 5 : 6"), this is the test to perform.
+        /// </summary>
+        public JsepNode Test { get; set; }
+        /// <summary>
+        /// For a conditional expression (i.e. "3 > 4 ? 5 : 6"), this is the value to use if the test comes back true.
+        /// </summary>
         public JsepNode Consequent { get; set; }
+        /// <summary>
+        /// For an alternate expression (i.e. "3 > 4 ? 5 : 6"), this is the value to use if the test comes back false.
+        /// </summary>
         public JsepNode Alternate { get; set; }
 
         public bool? Computed { get; set; }

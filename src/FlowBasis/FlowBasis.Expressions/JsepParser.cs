@@ -195,6 +195,7 @@ namespace FlowBasis.Expressions
                         var exp = new JsepNode
                         {
                             Type = JsepNodeType.ConditionalExpression,
+                            Test = test,
                             Consequent = consequent,
                             Alternate = alternate
                         };

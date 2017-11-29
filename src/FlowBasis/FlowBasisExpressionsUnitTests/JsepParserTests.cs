@@ -154,6 +154,25 @@ namespace FlowBasisExpressionsUnitTests
         }
 
 
+        [TestMethod]
+        public void Test_Basic_Conditional_Expressions()
+        {
+            var jsepParser = new JsepParser();
+
+            // 3 > 4 ? 6 : 5
+            JsepNode result = jsepParser.Parse("3 > 4 ? 6 : 5");
+
+            Assert.AreEqual(JsepNodeType.ConditionalExpression, result.Type);
+
+            Assert.AreEqual(JsepNodeType.BinaryExpression, result.Test.Type);
+            Assert.AreEqual(">", result.Test.Operator);
+            AssertNodeIsLiteralNumber(result.Test.Left, 3);
+            AssertNodeIsLiteralNumber(result.Test.Right, 4);
+
+            AssertNodeIsLiteralNumber(result.Consequent, 6);
+            AssertNodeIsLiteralNumber(result.Alternate, 5);
+        }
+
         private void AssertNodeIsLiteralNumber(JsepNode node, decimal expectedNumber)
         {
             Assert.AreEqual(JsepNodeType.Literal, node.Type);
