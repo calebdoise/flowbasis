@@ -43,13 +43,8 @@ namespace FlowBasis.Expressions
         {
             throw new Exception(message + " at character " + index);
         }
-
-        private static bool IsJsFalse(object value)
-        {
-            return value == null || value == (object)false;
-        }
-
-        public object Parse(string expr)
+       
+        public JsepNode Parse(string expr)
         {                        
             int PERIOD_CODE = 46, // '.'
                 COMMA_CODE = 44, // ','
@@ -95,14 +90,16 @@ namespace FlowBasis.Expressions
                 return 0;
             };
 
-            JsepNode createBinaryExpression(string op, object left, object right)
+            JsepNode createBinaryExpression(string op, JsepNode left, JsepNode right)
             {
                 var type = (op == "||" || op == "&&") ? JsepNodeType.LogicalExpression : JsepNodeType.BinaryExpression;
-                var node = new JsepNode();
-                node.Type = type;
-                node.Operator = op;
-                node.Left = left;
-                node.Right = right;
+                var node = new JsepNode
+                {
+                    Type = type,
+                    Operator = op,
+                    Left = left,
+                    Right = right
+                };
                 return node;
             }
 
@@ -147,17 +144,17 @@ namespace FlowBasis.Expressions
                 }
             };
 
-            Func<object> gobbleExpression = null;
+            Func<JsepNode> gobbleExpression = null;
             Func<string> gobbleBinaryOp = null;
-            Func<object> gobbleBinaryExpression = null;
-            Func<object> gobbleToken = null;
-            Func<object> gobbleNumericLiteral = null;
-            Func<object> gobbleStringLiteral = null;
-            Func<object> gobbleVariable = null;
-            Func<object> gobbleArray = null;
-            Func<object> gobbleIdentifier = null;
-            Func<char, List<object>> gobbleArguments = null;
-            Func<object> gobbleGroup = null;
+            Func<JsepNode> gobbleBinaryExpression = null;
+            Func<JsepNode> gobbleToken = null;
+            Func<JsepNode> gobbleNumericLiteral = null;
+            Func<JsepNode> gobbleStringLiteral = null;
+            Func<JsepNode> gobbleVariable = null;
+            Func<JsepNode> gobbleArray = null;
+            Func<JsepNode> gobbleIdentifier = null;
+            Func<char, List<JsepNode>> gobbleArguments = null;
+            Func<JsepNode> gobbleGroup = null;
 
             string substr(string str, int startIndex, int count)
             {
@@ -172,13 +169,14 @@ namespace FlowBasis.Expressions
             gobbleExpression = () =>
             {
                 var test = gobbleBinaryExpression();
-                object consequent, alternate;
+               
                 gobbleSpaces();
+
                 if (exprICode(index) == QUMARK_CODE)
                 {
                     // Ternary expression: test ? consequent : alternate
                     index++;
-                    consequent = gobbleExpression();
+                    var consequent = gobbleExpression();
                     if (consequent == null)
                     {
                         ThrowError("Expected expression", index);
@@ -188,16 +186,18 @@ namespace FlowBasis.Expressions
                     if (exprICode(index) == COLON_CODE)
                     {
                         index++;
-                        alternate = gobbleExpression();
+                        var alternate = gobbleExpression();
                         if (alternate == null)
                         {
                             ThrowError("Expected expression", index);
                         }
 
-                        var exp = new JsepNode();
-                        exp.Type = JsepNodeType.ConditionalExpression;
-                        exp.Consequent = consequent;
-                        exp.Alternate = alternate;
+                        var exp = new JsepNode
+                        {
+                            Type = JsepNodeType.ConditionalExpression,
+                            Consequent = consequent,
+                            Alternate = alternate
+                        };
                         return exp;
                     }
                     else
@@ -234,44 +234,46 @@ namespace FlowBasis.Expressions
             // e.g. `1`, `1+2`, `a+(b*2)-Math.sqrt(2)`
             gobbleBinaryExpression = () =>
             {
-                object node;
+                JsepNode node;
 
                 // First, try to get the leftmost thing
                 // Then, check to see if there's a binary operator operating on that leftmost thing
-                object left = gobbleToken();
+                JsepNode left = gobbleToken();
                 string biop = gobbleBinaryOp() as string;
 
                 // If there wasn't a binary operator, just return the leftmost node
-                if (biop == null || biop == (object)false)
+                if (biop == null)
                 {
                     return left;
                 }
 
                 // Otherwise, we need to start a stack to properly place the binary operations in their
                 // precedence structure
-                var biop_info = new JsepNode();
-                biop_info.Value = biop;
-                biop_info.Prec = binaryPrecedence(biop);
+                var biop_info = new JsepNode
+                {
+                    Value = biop,
+                    Prec = binaryPrecedence(biop)
+                };
 
-                object right = gobbleToken();
+                JsepNode right = gobbleToken();
                 if (right == null || right == (object)false)
                 {
                     ThrowError("Expected expression after " + biop, index);
                 }
-                var stack = new List<object>();
+                var stack = new List<JsepNode>();
                 stack.Add(left);
                 stack.Add(biop_info);
                 stack.Add(right);
 
-                Func<object> popStack = () =>
+                Func<JsepNode> popStack = () =>
                 {
-                    object value = stack[stack.Count - 1];
+                    JsepNode value = stack[stack.Count - 1];
                     stack.RemoveAt(stack.Count - 1);
                     return value;
                 };
 
                 // Properly deal with precedence using [recursive descent](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm)
-                while (!IsJsFalse(biop = gobbleBinaryOp()))
+                while ((biop = gobbleBinaryOp()) != null)
                 {
                     int prec = binaryPrecedence(biop);
 
@@ -279,22 +281,24 @@ namespace FlowBasis.Expressions
                     {
                         break;
                     }
-                    biop_info = new JsepNode();
-                    biop_info.Value = biop;
-                    biop_info.Prec = prec;
+                    biop_info = new JsepNode
+                    {
+                        Value = biop,
+                        Prec = prec
+                    };
 
                     // Reduce: make a binary expression from the three topmost entries.
-                    while ((stack.Count > 2) && (prec <= TryGetChildValueAsInt(stack[stack.Count - 2], "prec", -1)))
+                    while ((stack.Count > 2) && (prec <= (stack[stack.Count - 2].Prec ?? -1)))
                     {
                         right = popStack();
-                        biop = TryGetChildValue(popStack(), "value") as string;
+                        biop = popStack().Value as string;
                         left = popStack();
                         node = createBinaryExpression(biop, left, right);
                         stack.Add(node);
                     }
 
                     node = gobbleToken();
-                    if (IsJsFalse(node))
+                    if (node == null)
                     {
                         ThrowError("Expected expression after " + biop, index);
                     }
@@ -306,7 +310,7 @@ namespace FlowBasis.Expressions
                 node = stack[i];
                 while (i > 1)
                 {
-                    node = createBinaryExpression(TryGetChildValue(stack[i - 1], "value") as string, stack[i - 2], node);
+                    node = createBinaryExpression(stack[i - 1].Value as string, stack[i - 2], node);
                     i -= 2;
                 }
                 return node;
@@ -349,17 +353,19 @@ namespace FlowBasis.Expressions
                         {
                             index += tc_len;
 
-                            var exp = new JsepNode();
-                            exp.Type = JsepNodeType.UnaryExpression;
-                            exp.Operator = to_check;
-                            exp.Argument = gobbleToken();
-                            exp.Prefix = true;                            
+                            var exp = new JsepNode
+                            {
+                                Type = JsepNodeType.UnaryExpression,
+                                Operator = to_check,
+                                Argument = gobbleToken(),
+                                Prefix = true
+                            };
                             return exp;                            
                         }
                         to_check = to_check.Substring(0, --tc_len);
                     }
 
-                    return false;
+                    return null;
                 }
             };
 
@@ -416,16 +422,18 @@ namespace FlowBasis.Expressions
                     return null;
                 }
 
-                var exp = new JsepNode();
-                exp.Type = JsepNodeType.Literal;
-                exp.Value = Convert.ToDecimal(number);
-                exp.Raw = number;
+                var exp = new JsepNode
+                {
+                    Type = JsepNodeType.Literal,
+                    Value = Convert.ToDecimal(number),
+                    Raw = number
+                };
                 return exp;                           
             };
 
             // Parses a string literal, staring with single or double quotes with basic support for escape codes
             // e.g. `"hello world"`, `'this is\nJSEP'`
-            gobbleStringLiteral = () => 
+            gobbleStringLiteral = () =>
             {
                 string str = "";
                 char quote = exprI(index++);
@@ -466,10 +474,12 @@ namespace FlowBasis.Expressions
                     ThrowError("Unclosed quote after \"" + str + "\"", index);
                 }
 
-                var exp = new JsepNode();
-                exp.Type = JsepNodeType.Literal;
-                exp.Value = str;
-                exp.Raw = quote + str + quote;
+                var exp = new JsepNode
+                {
+                    Type = JsepNodeType.Literal,
+                    Value = str,
+                    Raw = quote + str + quote
+                };
                 return exp;                
             };
 
@@ -509,23 +519,29 @@ namespace FlowBasis.Expressions
 
                 if (literals.ContainsKey(identifier))
                 {
-                    var exp = new JsepNode();
-                    exp.Type = JsepNodeType.Literal;
-                    exp.Value = literals[identifier];
-                    exp.Raw = identifier;
+                    var exp = new JsepNode
+                    {
+                        Type = JsepNodeType.Literal,
+                        Value = literals[identifier],
+                        Raw = identifier
+                    };
                     return exp;
                 }
                 else if (identifier == this_str)
                 {
-                    var exp = new JsepNode();
-                    exp.Type = JsepNodeType.ThisExpression;
+                    var exp = new JsepNode
+                    {
+                        Type = JsepNodeType.ThisExpression
+                    };
                     return exp;                    
                 }
                 else
                 {
-                    var exp = new JsepNode();
-                    exp.Type = JsepNodeType.Identifier;
-                    exp.Name = identifier;
+                    var exp = new JsepNode
+                    {
+                        Type = JsepNodeType.Identifier,
+                        Name = identifier
+                    };
                     return exp;
                 }
             };
@@ -538,8 +554,7 @@ namespace FlowBasis.Expressions
             gobbleArguments = (termination) =>
             {
                 int ch_i;
-                var args = new List<object>();
-                object node;
+                var args = new List<JsepNode>();                
                 bool closed = false;
 
                 while (index < length)
@@ -558,9 +573,8 @@ namespace FlowBasis.Expressions
                     }
                     else
                     {
-                        node = gobbleExpression();
-                        var nodeAsJsepNode = node as JsepNode;
-                        if (IsJsFalse(node) || (nodeAsJsepNode != null && nodeAsJsepNode.Type == JsepNodeType.Compound))
+                        var node = gobbleExpression();                        
+                        if (node == null || node.Type == JsepNodeType.Compound)
                         {
                             ThrowError("Expected comma", index);
                         }
@@ -582,7 +596,7 @@ namespace FlowBasis.Expressions
             gobbleVariable = () =>
             {                
                 int ch_i = exprICode(index);
-                object node;
+                JsepNode node;
 
                 if (ch_i == OPAREN_CODE)
                 {
@@ -601,22 +615,24 @@ namespace FlowBasis.Expressions
                     {
                         gobbleSpaces();
 
-                        var exp = new JsepNode();
-                        exp.Type = JsepNodeType.MemberExpression;
-                        exp.Computed = false;
-                        exp.Object = node;
-                        exp.Property = gobbleIdentifier();
-
+                        var exp = new JsepNode
+                        {
+                            Type = JsepNodeType.MemberExpression,
+                            Computed = false,
+                            Object = node,
+                            Property = gobbleIdentifier()
+                        };
                         node = exp;
                     }
                     else if (ch_i == OBRACK_CODE)
                     {
-                        var exp = new JsepNode();
-                        exp.Type = JsepNodeType.MemberExpression;
-                        exp.Computed = true;
-                        exp.Object = node;
-                        exp.Property = gobbleExpression();
-
+                        var exp = new JsepNode
+                        {
+                            Type = JsepNodeType.MemberExpression,
+                            Computed = true,
+                            Object = node,
+                            Property = gobbleExpression()
+                        };
                         node = exp;
                         
                         gobbleSpaces();
@@ -672,14 +688,16 @@ namespace FlowBasis.Expressions
             {
                 index++;
 
-                var exp = new JsepNode();
-                exp.Type = JsepNodeType.ArrayExpression;
-                exp.Elements = gobbleArguments((char)CBRACK_CODE);
+                var exp = new JsepNode
+                {
+                    Type = JsepNodeType.ArrayExpression,
+                    Elements = gobbleArguments((char)CBRACK_CODE)
+                };
 
                 return exp;
             };
 
-            List<object> nodes = new List<object>();
+            List<JsepNode> nodes = new List<JsepNode>();
 
             while (index < length)
             {
@@ -694,8 +712,8 @@ namespace FlowBasis.Expressions
                 else
                 {
                     // Try to gobble each expression individually
-                    object node;
-                    if (!IsJsFalse(node = gobbleExpression()))
+                    JsepNode node;
+                    if ((node = gobbleExpression()) != null)
                     {
                         nodes.Add(node);
                         // If we weren't able to find a binary expression and are out of room, then
@@ -715,74 +733,15 @@ namespace FlowBasis.Expressions
             }
             else
             {
-                var compoundNode = new JsepNode();
-                compoundNode.Type = JsepNodeType.Compound;
-                compoundNode.Body = nodes;
+                var compoundNode = new JsepNode
+                {
+                    Type = JsepNodeType.Compound,
+                    Body = nodes
+                };
                 return compoundNode;
             }
-        }
-
-        private object TryGetChildValue(object node, string key)
-        {
-            if (node is JsepNode jsepNode)
-            {
-                switch (key)
-                {
-                    case "type": return jsepNode.Type;
-                    case "value": return jsepNode.Value;
-                    case "prec": return jsepNode.Prec;
-                }
-
-                throw new NotImplementedException();
-            }
-            else if (node is IDictionary<string, object> dictionary)
-            {
-                if (dictionary.TryGetValue(key, out object value))
-                {
-                    return value;
-                }
-            }
-
-            return null;
-        }
-
-        private int TryGetChildValueAsInt(object node, string key, int defaultValue)
-        {
-            object value = TryGetChildValue(node, key);
-            if (value != null)
-            {
-                return Convert.ToInt32(value);
-            }
-
-            return defaultValue;
-        }
+        }        
 
     }
-
-
-    public class JsepNode
-    {
-        public JsepNodeType Type { get; set; }
-        public string Name { get; set; }
-        public int? Prec { get; set; }
-        public object Value { get; set; }
-        public object Raw { get; set; }
-        public object Body { get; set; }
-        public object Argument { get; set; }
-        public List<object> Arguments { get; set; }
-        public List<object> Elements { get; set; }
-        public JsepNode Callee { get; set; }
-        public bool? Prefix { get; set; }
-        public string Operator { get; set; }
-        public object Left { get; set; }
-        public object Right { get; set; }
-
-        public object Consequent { get; set; }
-        public object Alternate { get; set; }
-
-        public bool? Computed { get; set; }
-
-        public object Object { get; set; }
-        public object Property { get; set; }
-    }
+    
 }
