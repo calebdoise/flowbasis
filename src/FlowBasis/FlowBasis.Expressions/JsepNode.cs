@@ -31,7 +31,7 @@ namespace FlowBasis.Expressions
 
         public bool? Computed { get; set; }
 
-        public object Object { get; set; }
-        public object Property { get; set; }
+        public JsepNode Object { get; set; }
+        public JsepNode Property { get; set; }
     }
 }

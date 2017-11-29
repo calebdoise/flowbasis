@@ -162,7 +162,7 @@ namespace FlowBasis.Expressions
                 {
                     return String.Empty;
                 }
-                return str.Substring(startIndex, Math.Max(count, str.Length - startIndex));
+                return str.Substring(startIndex, Math.Min(count, str.Length - startIndex));
             };
 
             // The main parsing function. Much of this code is dedicated to ternary expressions
