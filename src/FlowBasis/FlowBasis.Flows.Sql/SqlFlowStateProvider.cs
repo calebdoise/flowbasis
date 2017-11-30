@@ -248,30 +248,8 @@ END CATCH
             {
                 return default(T);
             }
-
-            if (typeof(T) == typeof(Dictionary<string, string>))
-            {
-                var result = new Dictionary<string, string>();
-
-                // TODO: Support Dictionary<> type serialization/deserialization.
-                var jObject = FlowBasis.Json.JsonSerializers.Default.Parse<object>(value) as JObject;
-                if (jObject != null)
-                {
-                    foreach (var pair in (IDictionary<string, object>)jObject)
-                    {
-                        string key = pair.Key;
-                        string strValue = pair.Value?.ToString();
-
-                        result[key] = strValue;
-                    }
-                }
-
-                return (T)((object)result);
-            }
-            else
-            {
-                return FlowBasis.Json.JsonSerializers.Default.Parse<T>(value);
-            }
+            
+            return FlowBasis.Json.JsonSerializers.Default.Parse<T>(value);            
         }
 
 
