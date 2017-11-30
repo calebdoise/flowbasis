@@ -1,4 +1,5 @@
-﻿using FlowBasis.Json;
+﻿using FlowBasis.Expressions;
+using FlowBasis.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using System.IO;
 namespace FlowBasis.Configuration
 {
     public class ConfigurationBuilder
-    {       
+    {
         private string basePath;
 
         private object syncObject = new object();
@@ -44,7 +45,7 @@ namespace FlowBasis.Configuration
         {
             const string argNamePrefix = "--";
             const string addJsonFileArgName = "addJsonFile";
-        
+
             string lastArgName = null;
 
             foreach (string arg in args)
@@ -56,7 +57,7 @@ namespace FlowBasis.Configuration
                         this.AddSetting(lastArgName, true);
                     }
 
-                    lastArgName = arg.Substring(argNamePrefix.Length);                    
+                    lastArgName = arg.Substring(argNamePrefix.Length);
                 }
                 else
                 {
@@ -176,6 +177,27 @@ namespace FlowBasis.Configuration
             const string fileAllTextPrefix = "<fileAllText>";
             const string ifExistsFileFirstLinePrefix = "<ifExistsFileFirstLine>";
             const string ifExistsFileAllTextPrefix = "<ifExistsFileAllText>";
+            const string evalPrefix = "<eval>";
+
+            string GetFileFirstLine(string path)
+            {
+                using (var fs = OpenFileForSharedRead(path))
+                using (var reader = new StreamReader(fs))
+                {
+                    string line = reader.ReadLine();
+                    return line;
+                }
+            }
+
+            string GetFileAllText(string path)
+            {
+                using (var fs = OpenFileForSharedRead(path))
+                using (var reader = new StreamReader(fs))
+                {
+                    string allText = reader.ReadToEnd();
+                    return allText;
+                }
+            }
 
             if (strValue == null)
             {
@@ -184,34 +206,19 @@ namespace FlowBasis.Configuration
             else if (strValue.StartsWith(fileFirstLinePrefix))
             {
                 string path = strValue.Substring(fileFirstLinePrefix.Length);
-                using (var fs = OpenFileForSharedRead(path))
-                using (var reader = new StreamReader(fs))
-                {
-                    string line = reader.ReadLine();
-                    return line;
-                }
+                return GetFileFirstLine(path);
             }
             else if (strValue.StartsWith(fileAllTextPrefix))
             {
                 string path = strValue.Substring(fileAllTextPrefix.Length);
-                using (var fs = OpenFileForSharedRead(path))
-                using (var reader = new StreamReader(fs))
-                {
-                    string allText = reader.ReadToEnd();
-                    return allText;
-                }
+                return GetFileAllText(path);
             }
             else if (strValue.StartsWith(ifExistsFileFirstLinePrefix))
             {
                 string path = this.EvaluateFullFilePath(strValue.Substring(ifExistsFileFirstLinePrefix.Length));
                 if (File.Exists(path))
                 {
-                    using (var fs = OpenFileForSharedRead(path))
-                    using (var reader = new StreamReader(fs))
-                    {
-                        string line = reader.ReadLine();
-                        return line;
-                    }
+                    return GetFileFirstLine(path);
                 }
                 else
                 {
@@ -219,21 +226,22 @@ namespace FlowBasis.Configuration
                 }
             }
             else if (strValue.StartsWith(ifExistsFileAllTextPrefix))
-            {                
+            {
                 string path = this.EvaluateFullFilePath(strValue.Substring(ifExistsFileAllTextPrefix.Length));
                 if (File.Exists(path))
                 {
-                    using (var fs = OpenFileForSharedRead(path))
-                    using (var reader = new StreamReader(fs))
-                    {
-                        string allText = reader.ReadToEnd();
-                        return allText;
-                    }
+                    return GetFileAllText(path);
                 }
                 else
                 {
                     return null;
                 }
+            }
+            else if (strValue.StartsWith(evalPrefix))
+            {
+                string expression = strValue.Substring(evalPrefix.Length);
+                object result = this.EvaluateExpression(expression);
+                return result;
             }
 
             return strValue;
@@ -259,6 +267,71 @@ namespace FlowBasis.Configuration
         {
             string fullPath = this.EvaluateFullFilePath(path);
             return new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        }
+
+        private object EvaluateExpression(string expression)
+        {
+            if (String.IsNullOrWhiteSpace(expression))
+            {
+                return null;
+            }
+
+            var jsepParser = new JsepParser();
+            var node = jsepParser.Parse(expression);
+
+            var result = this.EvaluateExpressionNode(node);
+            return result;
+        }
+
+        private object EvaluateExpressionNode(JsepNode node)
+        {
+            if (node == null)
+            {
+                return null;
+            }
+
+            switch (node.Type)
+            {
+                case JsepNodeType.Literal:
+                    {
+                        return node.Value;
+                    }
+
+                case JsepNodeType.BinaryExpression:
+                    {
+                        var left = this.EvaluateExpressionNode(node.Left);
+                        var right = this.EvaluateExpressionNode(node.Right);
+
+                        object result = this.EvaluateBinaryExpressionNode(node);
+                        return result;
+                    }
+
+                default:
+                    {
+                        throw new NotSupportedException($"Unsupported node type: {node.Type}");
+                    }
+            }
+
+            throw new NotSupportedException();
+        }
+
+        private object EvaluateBinaryExpressionNode(JsepNode node)
+        {
+            object left = this.EvaluateExpressionNode(node.Left);
+            object right = this.EvaluateExpressionNode(node.Right);
+
+            switch (node.Operator)
+            {
+                case "+":
+                    {
+                        throw new NotSupportedException();
+                    }
+
+                default:
+                    {
+                        throw new NotSupportedException($"Unsupported binary operator: {node.Operator}");
+                    }
+            }            
         }
     }
 }
