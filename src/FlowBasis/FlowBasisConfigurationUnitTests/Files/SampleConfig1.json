@@ -2,6 +2,7 @@
     "hello": "another new value",
     "numberValue": 34,
     "nestedObject": {
-        "someValue": "test"
+        "someValue": "test",
+        "someArray": [3,4,"blah"]
     }
 }

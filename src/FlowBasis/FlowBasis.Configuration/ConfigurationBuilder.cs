@@ -1,5 +1,6 @@
 ﻿using FlowBasis.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
@@ -17,17 +18,26 @@ namespace FlowBasis.Configuration
             this.basePath = Environment.CurrentDirectory;
         }
 
-        public void AddSetting(string name, object value)
+        public void AddSetting(string name, object value, bool suppressEvaluation = false)
         {
             lock (this.syncObject)
             {
-                this.configObject[name] = value;
+                if (suppressEvaluation)
+                {
+                    this.configObject[name] = value;
+                }
+                else
+                {
+                    object processedValue = this.ProcessSettingValue(value);
+                    this.configObject[name] = processedValue;
+                }
             }
         }
 
         public void AddCommandLineArgs(string[] args)
         {
             const string argNamePrefix = "--";
+            const string addJsonFileArgName = "addJsonFile";
         
             string lastArgName = null;
 
@@ -46,8 +56,17 @@ namespace FlowBasis.Configuration
                 {
                     if (lastArgName != null)
                     {
-                        string value = arg;
-                        this.AddSetting(lastArgName, value);
+                        string value = this.ProcessSettingValue(arg) as string;
+
+                        if (lastArgName == addJsonFileArgName)
+                        {
+                            this.AddJsonFile(value);
+                        }
+                        else
+                        {
+                            this.AddSetting(lastArgName, value, suppressEvaluation: true);
+                        }
+
                         lastArgName = null;
                     }
                 }
@@ -59,11 +78,11 @@ namespace FlowBasis.Configuration
             }
         }
 
-        public void AddSettings(IDictionary<string, object> settings)
+        public void AddSettings(IDictionary<string, object> settings, bool suppressEvaluation = false)
         {
             foreach (var pair in settings)
             {
-                this.AddSetting(pair.Key, pair.Value);
+                this.AddSetting(pair.Key, pair.Value, suppressEvaluation: suppressEvaluation);
             }
         }
 
@@ -84,9 +103,11 @@ namespace FlowBasis.Configuration
                 string json = File.ReadAllText(fullPath);
                 object result = JObject.Parse(json);
 
-                if (result is IDictionary<string, object> resultDictionary)
+                object processedResult = this.ProcessSettingValue(result);
+
+                if (processedResult is IDictionary<string, object> resultDictionary)
                 {
-                    this.AddSettings(resultDictionary);
+                    this.AddSettings(resultDictionary, suppressEvaluation: true);
                 }
             }
             else
@@ -110,6 +131,42 @@ namespace FlowBasis.Configuration
                 var clonedConfigObject = FlowBasis.Json.JsonSerializers.Default.Parse(json) as JObject;
                 return clonedConfigObject;
             }
+        }
+
+
+        protected virtual object ProcessSettingValue(object value)
+        {
+            if (value is string strValue)
+            {
+                return this.EvaluateString(strValue);
+            }
+            else if (value is IDictionary<string, object> dictionary)
+            {
+                var jObject = new JObject();
+                foreach (var pair in dictionary)
+                {
+                    var processedValue = this.ProcessSettingValue(pair.Value);
+                    jObject[pair.Key] = processedValue;
+                }
+                return jObject;
+            }
+            else if (value is IEnumerable enumerable)
+            {
+                var arrayList = new ArrayList();
+                foreach (var entry in enumerable)
+                {
+                    var processedEntry = this.ProcessSettingValue(entry);
+                    arrayList.Add(processedEntry);
+                }
+                return arrayList;
+            }
+
+            return value;
+        }
+
+        protected virtual object EvaluateString(string strValue)
+        {
+            return strValue;
         }
     }
 }
