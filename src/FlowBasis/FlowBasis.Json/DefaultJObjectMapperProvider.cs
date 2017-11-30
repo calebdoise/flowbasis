@@ -48,15 +48,8 @@ namespace FlowBasis.Json
             {
                 this.defaultClassMappingOptions = new DefaultClassMappingOptions();
             }
-
-            if (this.options.StringInputTransform != null)
-            {
-                this.stringMapper = new StringTransformMapper(this.options.StringInputTransform);
-            }
-            else
-            {
-                this.stringMapper = this.primitiveMapper;
-            }
+            
+            this.stringMapper = this.primitiveMapper;            
         }
 
 
@@ -242,14 +235,7 @@ namespace FlowBasis.Json
 
 
     public class DefaultJObjectMapperProviderOptions
-    { 
+    {
         public DefaultClassMappingOptions DefaultClassMappingOptions { get; set; }
-
-        /// <summary>
-        /// When parsing JSON, this method will be called transform the input string into the final value.
-        /// </summary>
-        public Func<string, string> StringInputTransform { get; set; }
     }
-
-    
 }
