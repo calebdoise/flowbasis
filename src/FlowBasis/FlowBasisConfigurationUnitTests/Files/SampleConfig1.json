@@ -1,0 +1,7 @@
+﻿{
+    "hello": "another new value",
+    "numberValue": 34,
+    "nestedObject": {
+        "someValue": "test"
+    }
+}
