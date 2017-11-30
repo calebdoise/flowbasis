@@ -1,0 +1,13 @@
+﻿{
+    "computedValue": "<eval>env('CommonProgramFiles')",
+    "computedValueSumTo8": "<eval>3 + 5",
+    "firstSecret": "<fileFirstLine>Files\\SampleSecret.txt",
+    "allSecretText": "<fileAllText>Files\\SampleSecret.txt",
+    "nestedObject": {
+        "childArray": [
+            {
+                "nestedComputedValue": "<eval>'hello' + 42"
+            }
+        ]
+    }
+}

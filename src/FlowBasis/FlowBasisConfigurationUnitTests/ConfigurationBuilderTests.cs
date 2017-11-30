@@ -64,6 +64,68 @@ namespace FlowBasisConfigurationUnitTests
         }
 
 
+        [TestMethod]
+        public void Test_Evaluation_Of_File_Content_Includes()
+        {
+            string projectPath = ProjectPath;
+
+            // Direct addition of settings.
+            var configBuilder = new ConfigurationBuilder();
+            configBuilder.BasePath = projectPath;
+            
+            configBuilder.AddSetting("secret", "<fileFirstLine>Files\\SampleSecret.txt");
+            configBuilder.AddSetting("secretIfExists", "<ifExistsFileFirstLine>Files\\SampleSecret.txt");
+            configBuilder.AddSetting("secretDoesNotExist", "<ifExistsFileFirstLine>DoesNotExist.txt");
+            configBuilder.AddSetting("secret2DoesNotExist", "<ifExistsFileAllText>DoesNotExist.txt");
+
+            dynamic config = configBuilder.GetConfigurationObject();
+            Assert.AreEqual("SampleSecretLine1", config.secret);
+            Assert.AreEqual("SampleSecretLine1", config.secretIfExists);
+            Assert.AreEqual(null, config.secretDoesNotExist);
+            Assert.AreEqual(null, config.secret2DoesNotExist);
+
+
+            // Through the command-line.
+            var configBuilder2 = new ConfigurationBuilder();
+            configBuilder2.BasePath = projectPath;
+
+            configBuilder.AddCommandLineArgs(new[] { "--secret", "<fileFirstLine>Files\\SampleSecret.txt" });
+            configBuilder.AddCommandLineArgs(new[] { "--secret2", "<fileAllText>Files\\SampleSecret.txt" });
+
+            dynamic config2 = configBuilder.GetConfigurationObject();
+            Assert.AreEqual("SampleSecretLine1", config2.secret);
+
+            var secret2Lines = ((string)config2.secret2).Split("\n").Select(s => s.Trim()).ToArray();
+            Assert.AreEqual(2, secret2Lines.Length);
+            Assert.AreEqual("SampleSecretLine1", secret2Lines[0]);
+            Assert.AreEqual("SampleSecretLine2", secret2Lines[1]);
+
+
+            // Ensure that missing files cause exceptions.
+            Exception caughtEx = null;
+            try
+            {
+                configBuilder.AddSetting("secret", "<fileFirstLine>DoesNotExist.txt");
+            }
+            catch (Exception ex)
+            {
+                caughtEx = ex;
+            }
+            Assert.IsNotNull(caughtEx);
+
+            caughtEx = null;
+            try
+            {
+                configBuilder.AddSetting("secret", "<fileAllText>DoesNotExist.txt");
+            }
+            catch (Exception ex)
+            {
+                caughtEx = ex;
+            }
+            Assert.IsNotNull(caughtEx);
+        }
+
+
         public static string ProjectPath
         {
             get

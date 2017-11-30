@@ -18,6 +18,12 @@ namespace FlowBasis.Configuration
             this.basePath = Environment.CurrentDirectory;
         }
 
+        public string BasePath
+        {
+            get { return this.basePath; }
+            set { this.basePath = value; }
+        }
+
         public void AddSetting(string name, object value, bool suppressEvaluation = false)
         {
             lock (this.syncObject)
@@ -166,7 +172,93 @@ namespace FlowBasis.Configuration
 
         protected virtual object EvaluateString(string strValue)
         {
+            const string fileFirstLinePrefix = "<fileFirstLine>";
+            const string fileAllTextPrefix = "<fileAllText>";
+            const string ifExistsFileFirstLinePrefix = "<ifExistsFileFirstLine>";
+            const string ifExistsFileAllTextPrefix = "<ifExistsFileAllText>";
+
+            if (strValue == null)
+            {
+                return null;
+            }
+            else if (strValue.StartsWith(fileFirstLinePrefix))
+            {
+                string path = strValue.Substring(fileFirstLinePrefix.Length);
+                using (var fs = OpenFileForSharedRead(path))
+                using (var reader = new StreamReader(fs))
+                {
+                    string line = reader.ReadLine();
+                    return line;
+                }
+            }
+            else if (strValue.StartsWith(fileAllTextPrefix))
+            {
+                string path = strValue.Substring(fileAllTextPrefix.Length);
+                using (var fs = OpenFileForSharedRead(path))
+                using (var reader = new StreamReader(fs))
+                {
+                    string allText = reader.ReadToEnd();
+                    return allText;
+                }
+            }
+            else if (strValue.StartsWith(ifExistsFileFirstLinePrefix))
+            {
+                string path = this.EvaluateFullFilePath(strValue.Substring(ifExistsFileFirstLinePrefix.Length));
+                if (File.Exists(path))
+                {
+                    using (var fs = OpenFileForSharedRead(path))
+                    using (var reader = new StreamReader(fs))
+                    {
+                        string line = reader.ReadLine();
+                        return line;
+                    }
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            else if (strValue.StartsWith(ifExistsFileAllTextPrefix))
+            {                
+                string path = this.EvaluateFullFilePath(strValue.Substring(ifExistsFileAllTextPrefix.Length));
+                if (File.Exists(path))
+                {
+                    using (var fs = OpenFileForSharedRead(path))
+                    using (var reader = new StreamReader(fs))
+                    {
+                        string allText = reader.ReadToEnd();
+                        return allText;
+                    }
+                }
+                else
+                {
+                    return null;
+                }
+            }
+
             return strValue;
+        }
+
+
+        private string EvaluateFullFilePath(string path)
+        {
+            string fullPath;
+            if (Path.IsPathRooted(path))
+            {
+                fullPath = path;
+            }
+            else
+            {
+                fullPath = Path.Combine(this.basePath, path);
+            }
+
+            return fullPath;
+        }
+
+        private FileStream OpenFileForSharedRead(string path)
+        {
+            string fullPath = this.EvaluateFullFilePath(path);
+            return new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
         }
     }
 }
