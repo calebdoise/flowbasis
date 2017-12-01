@@ -198,11 +198,11 @@ namespace FlowBasis.Configuration
 
         protected virtual object EvaluateString(string strValue)
         {
-            const string fileFirstLinePrefix = "<fileFirstLine>";
-            const string fileAllTextPrefix = "<fileAllText>";
-            const string ifExistsFileFirstLinePrefix = "<ifExistsFileFirstLine>";
-            const string ifExistsFileAllTextPrefix = "<ifExistsFileAllText>";
-            const string evalPrefix = "<eval>";
+            const string fileFirstLinePrefix = "fileFirstLine::";
+            const string fileAllTextPrefix = "fileAllText::";
+            const string ifExistsFileFirstLinePrefix = "ifExistsFileFirstLine::";
+            const string ifExistsFileAllTextPrefix = "ifExistsFileAllText::";
+            const string evalPrefix = "eval::";
 
             string GetFileFirstLine(string path)
             {

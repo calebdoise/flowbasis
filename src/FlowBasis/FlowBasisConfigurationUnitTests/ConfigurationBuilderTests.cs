@@ -73,10 +73,10 @@ namespace FlowBasisConfigurationUnitTests
             var configBuilder = new ConfigurationBuilder();
             configBuilder.BasePath = projectPath;
             
-            configBuilder.AddSetting("secret", "<fileFirstLine>Files\\SampleSecret.txt");
-            configBuilder.AddSetting("secretIfExists", "<ifExistsFileFirstLine>Files\\SampleSecret.txt");
-            configBuilder.AddSetting("secretDoesNotExist", "<ifExistsFileFirstLine>DoesNotExist.txt");
-            configBuilder.AddSetting("secret2DoesNotExist", "<ifExistsFileAllText>DoesNotExist.txt");
+            configBuilder.AddSetting("secret", "fileFirstLine::Files\\SampleSecret.txt");
+            configBuilder.AddSetting("secretIfExists", "ifExistsFileFirstLine::Files\\SampleSecret.txt");
+            configBuilder.AddSetting("secretDoesNotExist", "ifExistsFileFirstLine::DoesNotExist.txt");
+            configBuilder.AddSetting("secret2DoesNotExist", "ifExistsFileAllText::DoesNotExist.txt");
 
             dynamic config = configBuilder.GetConfigurationObject();
             Assert.AreEqual("SampleSecretLine1", config.secret);
@@ -89,8 +89,8 @@ namespace FlowBasisConfigurationUnitTests
             var configBuilder2 = new ConfigurationBuilder();
             configBuilder2.BasePath = projectPath;
 
-            configBuilder.AddCommandLineArgs(new[] { "--secret", "<fileFirstLine>Files\\SampleSecret.txt" });
-            configBuilder.AddCommandLineArgs(new[] { "--secret2", "<fileAllText>Files\\SampleSecret.txt" });
+            configBuilder.AddCommandLineArgs(new[] { "--secret", "fileFirstLine::Files\\SampleSecret.txt" });
+            configBuilder.AddCommandLineArgs(new[] { "--secret2", "fileAllText::Files\\SampleSecret.txt" });
 
             dynamic config2 = configBuilder.GetConfigurationObject();
             Assert.AreEqual("SampleSecretLine1", config2.secret);
@@ -105,7 +105,7 @@ namespace FlowBasisConfigurationUnitTests
             Exception caughtEx = null;
             try
             {
-                configBuilder.AddSetting("secret", "<fileFirstLine>DoesNotExist.txt");
+                configBuilder.AddSetting("secret", "fileFirstLine::DoesNotExist.txt");
             }
             catch (Exception ex)
             {
@@ -116,7 +116,7 @@ namespace FlowBasisConfigurationUnitTests
             caughtEx = null;
             try
             {
-                configBuilder.AddSetting("secret", "<fileAllText>DoesNotExist.txt");
+                configBuilder.AddSetting("secret", "fileAllText::DoesNotExist.txt");
             }
             catch (Exception ex)
             {
@@ -137,6 +137,20 @@ namespace FlowBasisConfigurationUnitTests
             Assert.AreEqual(8M, config3.computedValueSumTo8);
             Assert.AreEqual("SampleSecretLine1", config3.firstSecret);
             Assert.AreEqual("hello42", config3.nestedObject.childArray[0].nestedComputedValue);
+
+
+            // Through add file with command line.
+            var configBuilder4 = new ConfigurationBuilder();
+            configBuilder4.BasePath = projectPath;
+
+            configBuilder4.AddCommandLineArgs(new[] { "--addJsonFile", "Files\\SampleConfig2.json" });
+
+            dynamic config4 = configBuilder4.GetConfigurationObject();
+
+            Assert.AreEqual(Environment.GetEnvironmentVariable("CommonProgramFiles"), config4.computedValue);
+            Assert.AreEqual(8M, config4.computedValueSumTo8);
+            Assert.AreEqual("SampleSecretLine1", config4.firstSecret);
+            Assert.AreEqual("hello42", config4.nestedObject.childArray[0].nestedComputedValue);
         }
 
 
