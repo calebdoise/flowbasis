@@ -91,6 +91,32 @@ namespace FlowBasisExpressionsUnitTests
 
             result = evaluator.Evaluate("!(4 != 4)");
             Assert.AreEqual(true, result);
+
+            // &&
+            result = evaluator.Evaluate("false && false");
+            Assert.AreEqual(false, result);
+
+            result = evaluator.Evaluate("true && false");
+            Assert.AreEqual(false, result);
+
+            result = evaluator.Evaluate("false && true");
+            Assert.AreEqual(false, result);
+
+            result = evaluator.Evaluate("true && true");
+            Assert.AreEqual(true, result);
+
+            // ||
+            result = evaluator.Evaluate("false || false");
+            Assert.AreEqual(false, result);
+
+            result = evaluator.Evaluate("true || false");
+            Assert.AreEqual(true, result);
+
+            result = evaluator.Evaluate("false || true");
+            Assert.AreEqual(true, result);
+
+            result = evaluator.Evaluate("true || true");
+            Assert.AreEqual(true, result);
         }
 
 

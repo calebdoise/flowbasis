@@ -123,6 +123,20 @@ namespace FlowBasisConfigurationUnitTests
                 caughtEx = ex;
             }
             Assert.IsNotNull(caughtEx);
+
+
+            // Through add file.
+            var configBuilder3 = new ConfigurationBuilder();
+            configBuilder3.BasePath = projectPath;
+
+            configBuilder3.AddJsonFile("Files\\SampleConfig2.json");
+
+            dynamic config3 = configBuilder3.GetConfigurationObject();
+
+            Assert.AreEqual(Environment.GetEnvironmentVariable("CommonProgramFiles"), config3.computedValue);
+            Assert.AreEqual(8M, config3.computedValueSumTo8);
+            Assert.AreEqual("SampleSecretLine1", config3.firstSecret);
+            Assert.AreEqual("hello42", config3.nestedObject.childArray[0].nestedComputedValue);
         }
 
 

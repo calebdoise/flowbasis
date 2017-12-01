@@ -1,7 +1,7 @@
 ﻿{
-    "computedValue": "<eval>env('CommonProgramFiles')",
+    "computedValue": "<eval>env.CommonProgramFiles",
     "computedValueSumTo8": "<eval>3 + 5",
-    "firstSecret": "<fileFirstLine>Files\\SampleSecret.txt",
+    "firstSecret": "<eval>file('Files/SampleSecret.txt').firstLine",
     "allSecretText": "<fileAllText>Files\\SampleSecret.txt",
     "nestedObject": {
         "childArray": [

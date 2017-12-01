@@ -1,4 +1,5 @@
 ﻿using FlowBasis.Expressions;
+using FlowBasis.Expressions.Extensions;
 using FlowBasis.Json;
 using System;
 using System.Collections;
@@ -14,15 +15,39 @@ namespace FlowBasis.Configuration
         private object syncObject = new object();
         private JObject configObject = new JObject();
 
+        private ExpressionEvaluator expressionEvaluator;
+        private EnvironmentVariableMemberProvider environmentVariableMemberProvider;
+        private FileSystemExpressionCallable fileSystemExpressionCallable;
+
+
         public ConfigurationBuilder()
         {
             this.basePath = Environment.CurrentDirectory;
+
+            // Setup expression evaluator.
+            this.environmentVariableMemberProvider = new EnvironmentVariableMemberProvider();
+            this.fileSystemExpressionCallable = new FileSystemExpressionCallable(() => this.basePath);
+
+            this.expressionEvaluator = new ExpressionEvaluator(
+                new StandardExpressionScope(this, this.InternalExpressionIdentifierProvider));            
         }
 
         public string BasePath
         {
             get { return this.basePath; }
             set { this.basePath = value; }
+        }
+
+        private object InternalExpressionIdentifierProvider(string name)
+        {
+            switch (name)
+            {
+                case "env": return this.environmentVariableMemberProvider;
+                case "file": return this.fileSystemExpressionCallable;
+                default: return null;
+            }
+
+            throw new Exception($"Unknown expression identifier: {name}");
         }
 
         public void AddSetting(string name, object value, bool suppressEvaluation = false)
@@ -240,7 +265,7 @@ namespace FlowBasis.Configuration
             else if (strValue.StartsWith(evalPrefix))
             {
                 string expression = strValue.Substring(evalPrefix.Length);
-                object result = this.EvaluateExpression(expression);
+                object result = this.expressionEvaluator.Evaluate(expression);
                 return result;
             }
 
@@ -267,71 +292,6 @@ namespace FlowBasis.Configuration
         {
             string fullPath = this.EvaluateFullFilePath(path);
             return new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-        }
-
-        private object EvaluateExpression(string expression)
-        {
-            if (String.IsNullOrWhiteSpace(expression))
-            {
-                return null;
-            }
-
-            var jsepParser = new JsepParser();
-            var node = jsepParser.Parse(expression);
-
-            var result = this.EvaluateExpressionNode(node);
-            return result;
-        }
-
-        private object EvaluateExpressionNode(JsepNode node)
-        {
-            if (node == null)
-            {
-                return null;
-            }
-
-            switch (node.Type)
-            {
-                case JsepNodeType.Literal:
-                    {
-                        return node.Value;
-                    }
-
-                case JsepNodeType.BinaryExpression:
-                    {
-                        var left = this.EvaluateExpressionNode(node.Left);
-                        var right = this.EvaluateExpressionNode(node.Right);
-
-                        object result = this.EvaluateBinaryExpressionNode(node);
-                        return result;
-                    }
-
-                default:
-                    {
-                        throw new NotSupportedException($"Unsupported node type: {node.Type}");
-                    }
-            }
-
-            throw new NotSupportedException();
-        }
-
-        private object EvaluateBinaryExpressionNode(JsepNode node)
-        {
-            object left = this.EvaluateExpressionNode(node.Left);
-            object right = this.EvaluateExpressionNode(node.Right);
-
-            switch (node.Operator)
-            {
-                case "+":
-                    {
-                        throw new NotSupportedException();
-                    }
-
-                default:
-                    {
-                        throw new NotSupportedException($"Unsupported binary operator: {node.Operator}");
-                    }
-            }            
-        }
+        }        
     }
 }
