@@ -151,8 +151,19 @@ namespace FlowBasisConfigurationUnitTests
             Assert.AreEqual(8M, config4.computedValueSumTo8);
             Assert.AreEqual("SampleSecretLine1", config4.firstSecret);
             Assert.AreEqual("hello42", config4.nestedObject.childArray[0].nestedComputedValue);
+
+            // And try the strongly typed configuration.
+            SampleConfig2Class typedConfig4 = configBuilder4.GetConfigurationObject<SampleConfig2Class>();
+            Assert.AreEqual("SampleSecretLine1", typedConfig4.FirstSecret);
+            Assert.AreEqual(8M, typedConfig4.ComputedValueSumTo8);
         }
 
+
+        private class SampleConfig2Class
+        {
+            public string FirstSecret { get; set; }
+            public decimal ComputedValueSumTo8 { get; set; }
+        }
 
         public static string ProjectPath
         {

@@ -166,6 +166,18 @@ namespace FlowBasis.Configuration
         }
 
 
+        /// <summary>
+        /// Retrieve the finalized configuration object as strongly typed object.
+        /// </summary>
+        /// <returns></returns>
+        public T GetConfigurationObject<T>()
+        {
+            JObject clonedConfigObject = this.GetConfigurationObject();
+            T typedConfigObject = FlowBasis.Json.JsonSerializers.Default.Map<T>(clonedConfigObject);
+            return typedConfigObject;
+        }
+
+
         protected virtual object ProcessSettingValue(object value)
         {
             if (value is string strValue)
