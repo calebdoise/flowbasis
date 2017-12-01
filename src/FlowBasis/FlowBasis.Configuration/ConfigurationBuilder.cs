@@ -18,6 +18,7 @@ namespace FlowBasis.Configuration
         private ExpressionEvaluator expressionEvaluator;
         private EnvironmentVariableMemberProvider environmentVariableMemberProvider;
         private FileSystemExpressionCallable fileSystemExpressionCallable;
+        private ConfigMemberProvider configMemberProvider;
 
 
         public ConfigurationBuilder()
@@ -27,6 +28,7 @@ namespace FlowBasis.Configuration
             // Setup expression evaluator.
             this.environmentVariableMemberProvider = new EnvironmentVariableMemberProvider();
             this.fileSystemExpressionCallable = new FileSystemExpressionCallable(() => this.basePath);
+            this.configMemberProvider = new ConfigMemberProvider(this);
 
             this.expressionEvaluator = new ExpressionEvaluator(
                 new StandardExpressionScope(this, this.InternalExpressionIdentifierProvider));            
@@ -44,6 +46,7 @@ namespace FlowBasis.Configuration
             {
                 case "env": return this.environmentVariableMemberProvider;
                 case "file": return this.fileSystemExpressionCallable;
+                case "config": return this.configMemberProvider;
                 default: return null;
             }
 
@@ -305,5 +308,26 @@ namespace FlowBasis.Configuration
             string fullPath = this.EvaluateFullFilePath(path);
             return new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
         }        
+
+
+
+        private class ConfigMemberProvider : IExpressionMemberProvider
+        {
+            private ConfigurationBuilder configBuilder;
+
+            public ConfigMemberProvider(ConfigurationBuilder configBuilder)
+            {
+                this.configBuilder = configBuilder;
+            }
+
+            public object EvaluateMember(string name)
+            {
+                lock (this.configBuilder.syncObject)
+                {
+                    object value = this.configBuilder.configObject[name];
+                    return value;
+                }
+            }
+        }
     }
 }

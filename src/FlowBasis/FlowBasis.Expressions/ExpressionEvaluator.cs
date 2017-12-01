@@ -131,14 +131,46 @@ namespace FlowBasis.Expressions
             object left = this.Evaluate(node.Left);
             object right = this.Evaluate(node.Right);
 
+            bool treatBothAsIntegers = false;
+            bool treatBothAsDecimals = false;
+            if (this.IsIntegerType(left))
+            {
+                if (this.IsIntegerType(right))
+                {
+                    treatBothAsIntegers = true;
+                    treatBothAsDecimals = false;
+                }
+                else if (this.IsDecimalType(right))
+                {
+                    treatBothAsIntegers = false;
+                    treatBothAsDecimals = true;
+                }
+                else
+                {
+                    treatBothAsIntegers = false;
+                    treatBothAsDecimals = false;
+                }
+            }
+            else if (this.IsDecimalType(left))
+            {
+                treatBothAsIntegers = false;
+                treatBothAsDecimals = true;
+            }
+
+
             switch (node.Operator)
             {
                 case "+":
                     {
-                        if (left is decimal leftDecimal)
+                        if (treatBothAsIntegers)
+                        {
+                            long result = Convert.ToInt64(left) + Convert.ToInt64(right);
+                            return result;
+                        }
+                        else if (treatBothAsDecimals)
                         {                       
-                            decimal sum = leftDecimal + Convert.ToDecimal(right);
-                            return sum;
+                            decimal result = Convert.ToDecimal(left) + Convert.ToDecimal(right);
+                            return result;
                         }
                         else if (left is string leftStr)
                         {
@@ -153,11 +185,16 @@ namespace FlowBasis.Expressions
 
                 case "*":
                     {
-                        if (left is decimal leftDecimal)
+                        if (treatBothAsIntegers)
                         {
-                            decimal product = leftDecimal * Convert.ToDecimal(right);
-                            return product;
-                        }                       
+                            long result = Convert.ToInt64(left) * Convert.ToInt64(right);
+                            return result;
+                        }
+                        else if (treatBothAsDecimals)
+                        {
+                            decimal result = Convert.ToDecimal(left) * Convert.ToDecimal(right);
+                            return result;
+                        }
                         else
                         {
                             throw new NotSupportedException($"Unsupported operands: {node.Operator}");
@@ -166,10 +203,15 @@ namespace FlowBasis.Expressions
 
                 case "-":
                     {
-                        if (left is decimal leftDecimal)
+                        if (treatBothAsIntegers)
                         {
-                            decimal delta = leftDecimal - Convert.ToDecimal(right);
-                            return delta;
+                            long result = Convert.ToInt64(left) - Convert.ToInt64(right);
+                            return result;
+                        }
+                        else if (treatBothAsDecimals)
+                        {
+                            decimal result = Convert.ToDecimal(left) - Convert.ToDecimal(right);
+                            return result;
                         }
                         else
                         {
@@ -179,10 +221,10 @@ namespace FlowBasis.Expressions
 
                 case "/":
                     {
-                        if (left is decimal leftDecimal)
+                        if (treatBothAsDecimals || treatBothAsIntegers)
                         {
-                            decimal fraction = leftDecimal / Convert.ToDecimal(right);
-                            return fraction;
+                            decimal result = Convert.ToDecimal(left) / Convert.ToDecimal(right);
+                            return result;
                         }
                         else
                         {
@@ -192,9 +234,10 @@ namespace FlowBasis.Expressions
 
                 case "<":
                     {
-                        if (left is decimal leftDecimal)
+                        if (treatBothAsDecimals || treatBothAsIntegers)
                         {
-                            return leftDecimal < Convert.ToDecimal(right);
+                            bool result = Convert.ToDecimal(left) < Convert.ToDecimal(right);
+                            return result;
                         }
                         else
                         {
@@ -204,9 +247,10 @@ namespace FlowBasis.Expressions
 
                 case "<=":
                     {
-                        if (left is decimal leftDecimal)
+                        if (treatBothAsDecimals || treatBothAsIntegers)
                         {
-                            return leftDecimal <= Convert.ToDecimal(right);
+                            bool result = Convert.ToDecimal(left) <= Convert.ToDecimal(right);
+                            return result;
                         }
                         else
                         {
@@ -216,9 +260,10 @@ namespace FlowBasis.Expressions
 
                 case ">":
                     {
-                        if (left is decimal leftDecimal)
+                        if (treatBothAsDecimals || treatBothAsIntegers)
                         {
-                            return leftDecimal > Convert.ToDecimal(right);
+                            bool result = Convert.ToDecimal(left) > Convert.ToDecimal(right);
+                            return result;
                         }
                         else
                         {
@@ -228,9 +273,10 @@ namespace FlowBasis.Expressions
 
                 case ">=":
                     {
-                        if (left is decimal leftDecimal)
+                        if (treatBothAsDecimals || treatBothAsIntegers)
                         {
-                            return leftDecimal >= Convert.ToDecimal(right);
+                            bool result = Convert.ToDecimal(left) >= Convert.ToDecimal(right);
+                            return result;
                         }
                         else
                         {
@@ -274,9 +320,13 @@ namespace FlowBasis.Expressions
 
                 case "-":
                     {
-                        if (arg is decimal argDecimal)
+                        if (this.IsDecimalType(arg))
                         {
-                            return -argDecimal;
+                            return -Convert.ToDecimal(arg);
+                        }
+                        else if (this.IsIntegerType(arg))
+                        {
+                            return -Convert.ToInt64(arg);
                         }
                         else
                         {
@@ -415,25 +465,29 @@ namespace FlowBasis.Expressions
 
             var instance = this.Evaluate(node.Object);
 
-            if (instance is IExpressionMemberProvider memberProvider)
+            string memberName = null;
+            if (node.Property?.Type == JsepNodeType.Identifier)
             {
+                memberName = node.Property.Name;
+            }
+            else
+            {
+                memberName = this.Evaluate(node.Property) as string;
+            }
 
-                string memberName = null;
-                if (node.Property?.Type == JsepNodeType.Identifier)
-                {
-                    memberName = node.Property.Name;
-                }
-                else
-                {
-                    memberName = this.Evaluate(node.Property) as string;
-                }
+            if (memberName == null)
+            {
+                throw new Exception("Member specified must be a fixed identifier or resolve to a string.");
+            }
 
-                if (memberName == null)
-                {
-                    throw new Exception("Member specified must be a fixed identifier or resolve to a string.");
-                }
-
+            if (instance is IExpressionMemberProvider memberProvider)
+            {               
                 var memberValue = memberProvider.EvaluateMember(memberName);
+                return memberValue;
+            }
+            else if (instance is FlowBasis.Json.JObject instanceAsJObject)
+            {
+                var memberValue = instanceAsJObject[memberName];
                 return memberValue;
             }
             else
@@ -495,6 +549,32 @@ namespace FlowBasis.Expressions
             }
             
             return false;
-        }        
+        }
+
+
+        private bool IsIntegerType(object value)
+        {
+            if (value is int || value is long || value is short || value is byte)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool IsDecimalType(object value)
+        {
+            if (value is decimal || value is float || value is double)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool IsNumericType(object value)
+        {
+            return this.IsIntegerType(value) || this.IsDecimalType(value);
+        }
     }
 }

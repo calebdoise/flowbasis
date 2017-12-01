@@ -159,6 +159,30 @@ namespace FlowBasisConfigurationUnitTests
         }
 
 
+        [TestMethod]
+        public void Test_Evaluation_Of_Config_References()
+        {
+            string projectPath = ProjectPath;
+
+            // Direct addition of settings.
+            var configBuilder = new ConfigurationBuilder();
+            configBuilder.BasePath = projectPath;
+
+            configBuilder.AddSetting("myValue", 34);
+            configBuilder.AddSetting("myValue2", "eval:: config.myValue * 2");
+
+            object complexObj = new FlowBasis.Json.JObject();
+            ((dynamic)complexObj).foo = "hello";
+            configBuilder.AddSetting("complex", complexObj);
+            configBuilder.AddSetting("complexFoo", "eval:: config.complex.foo + ' world'");
+
+            dynamic config = configBuilder.GetConfigurationObject();
+            Assert.AreEqual(34M, config.myValue);
+            Assert.AreEqual(68M, config.myValue2);
+            Assert.AreEqual("hello world", config.complexFoo);
+        }
+
+
         private class SampleConfig2Class
         {
             public string FirstSecret { get; set; }

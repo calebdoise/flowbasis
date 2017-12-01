@@ -10,4 +10,8 @@
     <PackageProjectUrl>https://github.com/calebdoise/flowbasis</PackageProjectUrl>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\FlowBasis.Json\FlowBasis.Json.csproj" />
+  </ItemGroup>
+
 </Project>
