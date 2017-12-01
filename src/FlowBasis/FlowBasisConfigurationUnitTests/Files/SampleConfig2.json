@@ -9,5 +9,7 @@
                 "nestedComputedValue": "eval:: 'hello' + 42"
             }
         ]
-    }
+    },
+    "jsonObj": "eval:: json.parse('{\"field1\":13}')",
+    "jsonStr": "eval:: json.stringify(json.parse('{\"field1\":13}'))"
 }

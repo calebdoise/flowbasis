@@ -138,6 +138,8 @@ namespace FlowBasisConfigurationUnitTests
             Assert.AreEqual("SampleSecretLine1", config3.firstSecret);
             Assert.AreEqual("hello42", config3.nestedObject.childArray[0].nestedComputedValue);
 
+            Assert.AreEqual(13, config3.jsonObj.field1);
+            Assert.AreEqual("{\"field1\":13}", config3.jsonStr);
 
             // Through add file with command line.
             var configBuilder4 = new ConfigurationBuilder();

@@ -11,5 +11,6 @@ namespace FlowBasis.Expressions.Extensions
             string value = Environment.GetEnvironmentVariable(name);
             return value;
         }
+
     }
 }
