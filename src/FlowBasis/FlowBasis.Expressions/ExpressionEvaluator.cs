@@ -172,6 +172,64 @@ namespace FlowBasis.Expressions
                         }
                     }
 
+                case "<":
+                    {
+                        if (left is decimal leftDecimal)
+                        {
+                            return leftDecimal < Convert.ToDecimal(right);
+                        }
+                        else
+                        {
+                            throw new NotSupportedException($"Unsupported operands: {node.Operator}");
+                        }
+                    }
+
+                case "<=":
+                    {
+                        if (left is decimal leftDecimal)
+                        {
+                            return leftDecimal <= Convert.ToDecimal(right);
+                        }
+                        else
+                        {
+                            throw new NotSupportedException($"Unsupported operands: {node.Operator}");
+                        }
+                    }
+
+                case ">":
+                    {
+                        if (left is decimal leftDecimal)
+                        {
+                            return leftDecimal > Convert.ToDecimal(right);
+                        }
+                        else
+                        {
+                            throw new NotSupportedException($"Unsupported operands: {node.Operator}");
+                        }
+                    }
+
+                case ">=":
+                    {
+                        if (left is decimal leftDecimal)
+                        {
+                            return leftDecimal >= Convert.ToDecimal(right);
+                        }
+                        else
+                        {
+                            throw new NotSupportedException($"Unsupported operands: {node.Operator}");
+                        }
+                    }
+
+                case "==":
+                    {
+                        return Object.Equals(left, right);
+                    }
+
+                case "!=":
+                    {
+                        return !Object.Equals(left, right);
+                    }
+
                 default:
                     {
                         throw new NotSupportedException($"Unsupported operator: {node.Operator}");
@@ -194,6 +252,18 @@ namespace FlowBasis.Expressions
                 case "!":
                     {
                         return this.IsConsideredTrue(arg) ? false : true;  
+                    }
+
+                case "-":
+                    {
+                        if (arg is decimal argDecimal)
+                        {
+                            return -argDecimal;
+                        }
+                        else
+                        {
+                            throw new NotSupportedException($"Unsupported operands: {node.Operator}");
+                        }
                     }
 
                 default:
