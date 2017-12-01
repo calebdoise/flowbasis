@@ -64,6 +64,40 @@ namespace FlowBasis.Configuration
             throw new Exception($"Unknown expression identifier: {name}");
         }
 
+        public virtual void PerformAction(string actionName, string actionValue, string sourceFilePath = null)
+        {
+            string InterpretActionValueAsFilePath()
+            {
+                if (sourceFilePath == null)
+                {
+                    return actionValue;
+                }
+                else
+                {
+                    string sourceFileDirectory = Path.GetDirectoryName(sourceFilePath);
+                    string actualPath = this.EvaluateFullFilePath(actionValue, basePathOverride: sourceFileDirectory);
+                    return actualPath;
+                }
+            }
+
+            switch (actionName)
+            {
+                case "addJsonFile":
+                    {
+                        this.AddJsonFile(InterpretActionValueAsFilePath(), throwIfNotExists: true);
+                        return;
+                    }
+
+                case "addJsonFileIfExists":
+                    {
+                        this.AddJsonFile(InterpretActionValueAsFilePath(), throwIfNotExists: false);
+                        return;
+                    }
+            }
+
+            throw new Exception($"Unknown action: {actionName}");
+        }
+
         public void AddSetting(string name, object value, bool suppressEvaluation = false)
         {
             lock (this.syncObject)
@@ -150,6 +184,33 @@ namespace FlowBasis.Configuration
                 object result = JObject.Parse(json);
 
                 object processedResult = this.ProcessSettingValue(result);
+
+                if (processedResult is JObject jObject)
+                {
+                    object actions = jObject["__actions"];
+                    if (actions != null)
+                    {
+                        jObject.Remove("__actions");
+
+                        if (actions is IEnumerable enumerable)
+                        {
+                            foreach (object action in enumerable)
+                            {
+                                var actionJObject = action as JObject;
+                                if (actionJObject != null)
+                                {
+                                    string actionName = actionJObject["name"] as string;
+                                    string actionValue = actionJObject["value"] as string;
+
+                                    if (!String.IsNullOrWhiteSpace(actionName) && !String.IsNullOrWhiteSpace(actionValue))
+                                    {
+                                        this.PerformAction(actionName, actionValue, sourceFilePath: fullPath);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
                 if (processedResult is IDictionary<string, object> resultDictionary)
                 {
@@ -299,7 +360,7 @@ namespace FlowBasis.Configuration
         }
 
 
-        private string EvaluateFullFilePath(string path)
+        private string EvaluateFullFilePath(string path, string basePathOverride = null)
         {
             string fullPath;
             if (Path.IsPathRooted(path))
@@ -308,7 +369,7 @@ namespace FlowBasis.Configuration
             }
             else
             {
-                fullPath = Path.Combine(this.basePath, path);
+                fullPath = Path.Combine(basePathOverride ?? this.basePath, path);
             }
 
             return fullPath;

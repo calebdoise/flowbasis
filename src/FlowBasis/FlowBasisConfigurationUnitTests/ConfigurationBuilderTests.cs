@@ -182,6 +182,22 @@ namespace FlowBasisConfigurationUnitTests
             Assert.AreEqual("hello world", config.complexFoo);
         }
 
+        [TestMethod]
+        public void Test_Json_Includes()
+        {
+            string projectPath = ProjectPath;
+
+            // Direct addition of settings.
+            var configBuilder = new ConfigurationBuilder();
+            configBuilder.BasePath = projectPath;
+
+            configBuilder.AddJsonFile("Files/SampleConfigWithInclude.json");                       
+
+            dynamic config = configBuilder.GetConfigurationObject();
+            Assert.AreEqual("this is my imported value", config.includedFromAnotherFile);
+            Assert.AreEqual("here", config.yetAnotherValue);
+        }
+
 
         private class SampleConfig2Class
         {

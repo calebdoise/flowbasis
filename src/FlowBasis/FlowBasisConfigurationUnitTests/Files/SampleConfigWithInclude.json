@@ -1,0 +1,14 @@
+﻿{
+    "__actions": [
+        {
+            "name": "addJsonFile",
+            "value": "SampleConfigToInclude.json"
+        },
+        {
+            "name": "addJsonFileIfExists",
+            "value": "FileDoesNotExist.json"
+        }
+    ],
+
+    "yetAnotherValue": "here"
+}
