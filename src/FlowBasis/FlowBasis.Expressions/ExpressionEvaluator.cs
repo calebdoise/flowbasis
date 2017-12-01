@@ -6,9 +6,22 @@ namespace FlowBasis.Expressions
 {
     public class ExpressionEvaluator
     {
+        private ExpressionScope scope;
 
-        public ExpressionEvaluator()
+        public ExpressionEvaluator() : this(null)
         {
+        }
+
+        public ExpressionEvaluator(ExpressionScope scope)
+        {
+            if (scope != null)
+            {
+                this.scope = scope;
+            }
+            else
+            {
+                this.scope = new ExpressionScope();
+            }
         }
 
 
@@ -71,28 +84,33 @@ namespace FlowBasis.Expressions
                     }
 
                 case JsepNodeType.Identifier:
-                    {
-                        throw new NotSupportedException($"Unsupported node type: {node.Type}");
-                    }                
+                    {                        
+                        object result = this.scope.EvaluateIdentifier(node.Name);
+                        return result;
+                    }            
 
                 case JsepNodeType.Compound:
                     {
-                        throw new NotSupportedException($"Unsupported node type: {node.Type}");
+                        object result = this.EvaluateCompoundExpression(node);
+                        return result;
                     }
 
                 case JsepNodeType.MemberExpression:
                     {
-                        throw new NotSupportedException($"Unsupported node type: {node.Type}");
+                        object result = this.EvaluateMemberExpression(node);
+                        return result;
                     }
 
                 case JsepNodeType.ThisExpression:
                     {
-                        throw new NotSupportedException($"Unsupported node type: {node.Type}");
+                        object result = this.scope.EvaluateThis();
+                        return result;
                     }
 
                 case JsepNodeType.CallExpression:
                     {
-                        throw new NotSupportedException($"Unsupported node type: {node.Type}");
+                        object result = this.EvaluateCallExpression(node);
+                        return result;
                     }
 
                 default:
@@ -360,6 +378,98 @@ namespace FlowBasis.Expressions
             else
             {
                 return null;
+            }
+        }
+
+
+        protected virtual object EvaluateCompoundExpression(JsepNode node)
+        {
+            if (node.Type != JsepNodeType.Compound)
+            {
+                throw new Exception("Expected Compound");
+            }
+
+            if (node.Body != null)
+            {
+                // TODO: Provide optional mode where each compound result is returned as array.
+                object lastResult = null;
+                foreach (var elementNode in node.Body)
+                {
+                    lastResult = this.Evaluate(elementNode);                    
+                }
+                return lastResult;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+
+        protected virtual object EvaluateMemberExpression(JsepNode node)
+        {
+            if (node.Type != JsepNodeType.MemberExpression)
+            {
+                throw new Exception("Expected MemberExpression");
+            }
+
+            var instance = this.Evaluate(node.Object);
+
+            if (instance is IExpressionMemberProvider memberProvider)
+            {
+
+                string memberName = null;
+                if (node.Property?.Type == JsepNodeType.Identifier)
+                {
+                    memberName = node.Property.Name;
+                }
+                else
+                {
+                    memberName = this.Evaluate(node.Property) as string;
+                }
+
+                if (memberName == null)
+                {
+                    throw new Exception("Member specified must be a fixed identifier or resolve to a string.");
+                }
+
+                var memberValue = memberProvider.EvaluateMember(memberName);
+                return memberValue;
+            }
+            else
+            {
+                throw new Exception("Object instance cannot provide member information.");
+            }            
+        }
+
+
+        protected virtual object EvaluateCallExpression(JsepNode node)
+        {
+            if (node.Type != JsepNodeType.CallExpression)
+            {
+                throw new Exception("Expected CallExpression");
+            }
+
+            var callee = this.Evaluate(node.Callee);
+            if (callee is IExpressionCallable callable)
+            {
+                object[] args = new object[node.Arguments?.Count ?? 0];
+
+                if (node.Arguments != null)
+                {
+                    for (int co = 0; co < node.Arguments.Count; co++)
+                    {
+                        var argValue = this.Evaluate(node.Arguments[co]);
+                        args[co] = argValue;
+                    }
+                }
+
+                object result = callable.EvaluateCall(args);
+                return result;
+            }
+            else
+            {
+                throw new Exception("Target expression is not callable.");
             }
         }
 
