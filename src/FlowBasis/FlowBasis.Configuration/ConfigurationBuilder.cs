@@ -16,22 +16,15 @@ namespace FlowBasis.Configuration
         private JObject configObject = new JObject();
 
         private ExpressionEvaluator expressionEvaluator;
-        private EnvironmentVariableMemberProvider environmentVariableMemberProvider;
-        private FileSystemExpressionCallable fileSystemExpressionCallable;
-        private ConfigMemberProvider configMemberProvider;
+        private IDictionary<string, object> expressionIdentifiers;
 
 
         public ConfigurationBuilder()
         {
             this.basePath = Environment.CurrentDirectory;
 
-            // Setup expression evaluator.
-            this.environmentVariableMemberProvider = new EnvironmentVariableMemberProvider();
-            this.fileSystemExpressionCallable = new FileSystemExpressionCallable(() => this.basePath);
-            this.configMemberProvider = new ConfigMemberProvider(this);
-
-            this.expressionEvaluator = new ExpressionEvaluator(
-                new StandardExpressionScope(this, this.InternalExpressionIdentifierProvider));            
+            this.expressionIdentifiers = new Dictionary<string, object>();
+            this.expressionEvaluator = this.SetupExpressionEvaluator();
         }
 
         public string BasePath
@@ -40,15 +33,33 @@ namespace FlowBasis.Configuration
             set { this.basePath = value; }
         }
 
-        private object InternalExpressionIdentifierProvider(string name)
+        public IDictionary<string, object> ExpressionIdentifiers
         {
-            switch (name)
+            get { return this.expressionIdentifiers; }
+        }
+
+        protected virtual ExpressionEvaluator SetupExpressionEvaluator()
+        {
+            var environmentVariableMemberProvider = new EnvironmentVariableMemberProvider();
+            var fileSystemExpressionCallable = new FileSystemExpressionCallable(() => this.basePath);
+            var configMemberProvider = new ConfigMemberProvider(this);
+
+            var evaluator = new ExpressionEvaluator(
+                new StandardExpressionScope(this, this.GetExpressionIdentifierValue));
+
+            this.expressionIdentifiers["env"] = environmentVariableMemberProvider;
+            this.expressionIdentifiers["file"] = fileSystemExpressionCallable;
+            this.expressionIdentifiers["config"] = configMemberProvider;
+
+            return evaluator;
+        }
+
+        protected virtual object GetExpressionIdentifierValue(string name)
+        {
+            if (this.expressionIdentifiers.TryGetValue(name, out object value))
             {
-                case "env": return this.environmentVariableMemberProvider;
-                case "file": return this.fileSystemExpressionCallable;
-                case "config": return this.configMemberProvider;
-                default: return null;
-            }
+                return value;
+            }            
 
             throw new Exception($"Unknown expression identifier: {name}");
         }
