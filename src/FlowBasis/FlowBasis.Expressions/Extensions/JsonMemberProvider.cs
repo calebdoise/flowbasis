@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FlowBasis.Json;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -8,7 +9,8 @@ namespace FlowBasis.Expressions.Extensions
     {
         private static JsonParseExpressionCallable s_jsonParse = new JsonParseExpressionCallable();
         private static JsonStringifyExpressionCallable s_jsonStringify = new JsonStringifyExpressionCallable();
-
+        private static JsonMergeExpressionCallable s_jsonMerge = new JsonMergeExpressionCallable();
+        private static JsonFieldExpressionCallable s_jsonField = new JsonFieldExpressionCallable();
 
         public object EvaluateMember(string name)
         {
@@ -16,6 +18,8 @@ namespace FlowBasis.Expressions.Extensions
             {
                 case "parse": return s_jsonParse;
                 case "stringify": return s_jsonStringify;
+                case "merge": return s_jsonMerge;
+                case "field": return s_jsonField;
 
                 default: throw new Exception($"Member does not exist: {name}");
             }
@@ -51,6 +55,53 @@ namespace FlowBasis.Expressions.Extensions
                     {
                         string json = FlowBasis.Json.JsonSerializers.Default.Stringify(args[0]);
                         return json;
+                    }
+                }
+
+                return null;
+            }
+        }
+
+        public class JsonMergeExpressionCallable : IExpressionCallable
+        {
+            public object EvaluateCall(object[] args)
+            {
+                var mergedObject = new JObject();
+
+                foreach (object arg in args)
+                { 
+                    if (arg is IDictionary<string, object> dictionary)
+                    {
+                        foreach (var pair in dictionary)
+                        {
+                            mergedObject[pair.Key] = pair.Value;
+                        }
+                    }
+                }
+
+                return mergedObject;
+            }
+        }
+        
+        public class JsonFieldExpressionCallable : IExpressionCallable
+        {
+            public object EvaluateCall(object[] args)
+            {
+                if (args.Length > 0)
+                {
+                    string fieldName = args[0]?.ToString();
+                    if (fieldName != null)
+                    {
+                        object value = null;
+                        if (args.Length > 1)
+                        {
+                            value = args[1];
+                        }
+
+                        var jObject = new JObject();
+                        jObject[fieldName] = value;
+
+                        return jObject;
                     }
                 }
 

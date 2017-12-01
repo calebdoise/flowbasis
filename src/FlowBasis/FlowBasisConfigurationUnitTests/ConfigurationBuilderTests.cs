@@ -140,6 +140,9 @@ namespace FlowBasisConfigurationUnitTests
 
             Assert.AreEqual(13, config3.jsonObj.field1);
             Assert.AreEqual("{\"field1\":13}", config3.jsonStr);
+            Assert.AreEqual(12, config3.jsonMerged.a);
+            Assert.AreEqual(4, config3.jsonMerged.b);
+            Assert.AreEqual(6, config3.jsonMerged.c);
 
             // Through add file with command line.
             var configBuilder4 = new ConfigurationBuilder();

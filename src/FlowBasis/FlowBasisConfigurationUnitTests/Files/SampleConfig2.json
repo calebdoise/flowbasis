@@ -11,5 +11,6 @@
         ]
     },
     "jsonObj": "eval:: json.parse('{\"field1\":13}')",
-    "jsonStr": "eval:: json.stringify(json.parse('{\"field1\":13}'))"
+    "jsonStr": "eval:: json.stringify(json.parse('{\"field1\":13}'))",
+    "jsonMerged": "eval:: json.merge(json.field('a', 12), json.field('b', 4), json.field('c', 6))"
 }
