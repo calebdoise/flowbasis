@@ -195,8 +195,11 @@ namespace FlowBasis.Configuration
                 lock (this.syncObject)
                 {
                     if (this.fileIncludeStack.Contains(fullPath))
-                    {                        
-                        throw new Exception($"Circular loop detected in file includes: {fullPath}");
+                    {
+                        throw new ConfigurationFileIncludeLoopException($"Circular loop detected in file includes: {fullPath}", this.fileIncludeStack.ToArray())
+                        {
+                            File = fullPath
+                        };
                     }
 
                     this.filesIncluded.Add(fullPath);
@@ -242,6 +245,32 @@ namespace FlowBasis.Configuration
                         this.AddSettings(resultDictionary, suppressEvaluation: true);
                     }
                 }
+                catch (ConfigurationException configEx)
+                {
+                    if (configEx.File == null)
+                    {
+                        configEx.File = fullPath;
+                        lock (this.syncObject)
+                        {
+                            configEx.FileIncludeStack = this.fileIncludeStack.ToArray();
+                        }
+                    }        
+
+                    throw configEx;
+                }
+                catch (Exception ex)
+                {
+                    string[] fileIncludeStackArray = null;
+                    lock (this.syncObject)
+                    {
+                        fileIncludeStackArray = this.fileIncludeStack.ToArray();
+                    }
+                    throw new ConfigurationException($"Error in configuration file: {fullPath}: {ex.Message}", ex)
+                    {
+                        File = fullPath,
+                        FileIncludeStack = fileIncludeStackArray
+                    };
+                }
                 finally
                 {
                     this.fileIncludeStack.Pop();
@@ -251,7 +280,10 @@ namespace FlowBasis.Configuration
             {
                 if (throwIfNotExists)
                 {
-                    throw new Exception($"Configuration file not found: {path}");
+                    throw new ConfigurationException($"Configuration file not found: {path}")
+                    {
+                        File = fullPath
+                    };
                 }
             }
         }
@@ -293,29 +325,71 @@ namespace FlowBasis.Configuration
         }
 
 
-        protected virtual object ProcessSettingValue(object value)
+        protected virtual object ProcessSettingValue(object value, Stack<string> propertyPathStack = null)
         {
+            if (propertyPathStack == null)
+            {
+                propertyPathStack = new Stack<string>();
+            }
+
             if (value is string strValue)
             {
-                return this.EvaluateString(strValue);
+                try
+                {
+                    return this.EvaluateString(strValue);
+                }
+                catch (Exception ex)
+                {
+                    string[] propertyPathStackArray = propertyPathStack.ToArray();
+                    Array.Reverse(propertyPathStackArray);
+
+                    throw new ConfigurationException($"String evaluation failed: {ex.Message}", ex)
+                    {
+                        StringExpression = strValue,
+                        PropertyPath = propertyPathStackArray
+                    };
+                }
             }
             else if (value is IDictionary<string, object> dictionary)
             {
                 var jObject = new JObject();
                 foreach (var pair in dictionary)
                 {
-                    var processedValue = this.ProcessSettingValue(pair.Value);
+                    object processedValue = null;
+                    try
+                    {
+                        propertyPathStack.Push(pair.Key);
+                        processedValue = this.ProcessSettingValue(pair.Value, propertyPathStack);
+                    }
+                    finally
+                    {
+                        propertyPathStack.Pop();
+                    }
+
                     jObject[pair.Key] = processedValue;
                 }
                 return jObject;
             }
             else if (value is IEnumerable enumerable)
             {
+                int index = 0;
                 var arrayList = new ArrayList();
                 foreach (var entry in enumerable)
                 {
-                    var processedEntry = this.ProcessSettingValue(entry);
+                    object processedEntry = null;
+                    try
+                    {
+                        propertyPathStack.Push("[" + index + "]");
+                        processedEntry = this.ProcessSettingValue(entry, propertyPathStack);
+                    }
+                    finally
+                    {
+                        propertyPathStack.Pop();
+                    }
+                    
                     arrayList.Add(processedEntry);
+
+                    index++;
                 }
                 return arrayList;
             }

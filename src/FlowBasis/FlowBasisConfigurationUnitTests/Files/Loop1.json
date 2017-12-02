@@ -1,0 +1,10 @@
+﻿{
+    "__actions": [
+        {
+            "name": "addJsonFile",
+            "value": "Loop2.json"
+        }
+    ],
+
+    "purpose": "test circular loops on imports"
+}

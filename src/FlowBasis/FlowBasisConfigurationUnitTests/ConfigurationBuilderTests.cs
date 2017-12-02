@@ -191,8 +191,7 @@ namespace FlowBasisConfigurationUnitTests
         public void Test_Json_Includes()
         {
             string projectPath = ProjectPath;
-
-            // Direct addition of settings.
+            
             var configBuilder = new ConfigurationBuilder();
             configBuilder.BasePath = projectPath;
 
@@ -205,8 +204,66 @@ namespace FlowBasisConfigurationUnitTests
             var filesIncluded = configBuilder.GetListOfFilesIncluded();
             Assert.AreEqual(2, filesIncluded.Count);
             Assert.IsTrue(filesIncluded[0].EndsWith("SampleConfigWithInclude.json"));
-            Assert.IsTrue(filesIncluded[1].EndsWith("SampleConfigToInclude.json"));
+            Assert.IsTrue(filesIncluded[1].EndsWith("SampleConfigToInclude.json"));           
         }
+
+        [TestMethod]
+        public void Test_Json_Include_Circular_Loop()
+        {
+            string projectPath = ProjectPath;
+
+            var configBuilder = new ConfigurationBuilder();
+            configBuilder.BasePath = projectPath;
+
+            Exception caughtEx = null;
+            try
+            {
+                configBuilder.AddJsonFile("Files/Loop1.json");
+            }
+            catch (Exception ex)
+            {
+                caughtEx = ex;
+            }
+
+            Assert.IsNotNull(caughtEx);
+            Assert.IsTrue(caughtEx.Message.Contains("loop detected"));
+            Assert.IsInstanceOfType(caughtEx, typeof(ConfigurationFileIncludeLoopException));
+            Assert.IsTrue(((ConfigurationFileIncludeLoopException)caughtEx).FileIncludeStack.Length > 0);
+        }
+
+
+        [TestMethod]
+        public void Test_Json_Include_Str_Eval_Error()
+        {
+            string projectPath = ProjectPath;
+
+            var configBuilder = new ConfigurationBuilder();
+            configBuilder.BasePath = projectPath;
+
+            Exception caughtEx = null;
+            try
+            {
+                configBuilder.AddJsonFile("Files/StrEvalError1.json");
+            }
+            catch (Exception ex)
+            {
+                caughtEx = ex;
+            }
+
+            Assert.IsNotNull(caughtEx);
+            Assert.IsTrue(caughtEx.Message.Contains("String evaluation failed"));
+            Assert.IsInstanceOfType(caughtEx, typeof(ConfigurationException));            
+
+            var configEx = (ConfigurationException)caughtEx;
+            Assert.IsTrue(configEx.File.Contains("StrEvalError1.json"));
+            Assert.AreEqual("eval:: (3 + 4", configEx.StringExpression);            
+            Assert.AreEqual(4, configEx.PropertyPath.Length);
+            Assert.AreEqual("root", configEx.PropertyPath[0]);
+            Assert.AreEqual("blarg", configEx.PropertyPath[1]);
+            Assert.AreEqual("[2]", configEx.PropertyPath[2]);
+            Assert.AreEqual("p2", configEx.PropertyPath[3]);
+        }
+
 
 
         private class SampleConfig2Class
