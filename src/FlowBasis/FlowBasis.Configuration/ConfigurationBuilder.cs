@@ -190,103 +190,128 @@ namespace FlowBasis.Configuration
                 fullPath = Path.Combine(this.basePath, path);
             }
 
-            if (File.Exists(fullPath))
+            string[] fileIncludeStackBeforeThisFile;
+
+            lock (this.syncObject)
             {
-                lock (this.syncObject)
+                fileIncludeStackBeforeThisFile = this.fileIncludeStack.ToArray();
+
+                // Check to see if we have a circular loop of include files.
+                if (this.fileIncludeStack.Contains(fullPath))
                 {
-                    if (this.fileIncludeStack.Contains(fullPath))
+                    throw new ConfigurationFileIncludeLoopException($"Circular loop detected in file includes: {fullPath}", this.fileIncludeStack.ToArray())
                     {
-                        throw new ConfigurationFileIncludeLoopException($"Circular loop detected in file includes: {fullPath}", this.fileIncludeStack.ToArray())
+                        File = fullPath
+                    };
+                }
+                
+                this.fileIncludeStack.Push(fullPath);
+            }
+
+            try
+            {
+                bool doesNotExist;
+                string json = this.ObtainConfigurationFileText(fullPath, fileIncludeStackBeforeThisFile, out doesNotExist);
+
+                if (doesNotExist)
+                {
+                    if (throwIfNotExists)
+                    {
+                        throw new ConfigurationException($"Configuration file not found: {path}")
                         {
                             File = fullPath
                         };
                     }
-
-                    this.filesIncluded.Add(fullPath);
-                    this.fileIncludeStack.Push(fullPath);
                 }
-
-                try
+                else
                 {
-                    string json = File.ReadAllText(fullPath);
-                    object result = JObject.Parse(json);
-
-                    object processedResult = this.ProcessSettingValue(result);
-
-                    if (processedResult is JObject jObject)
+                    lock (this.syncObject)
                     {
-                        object actions = jObject["__actions"];
-                        if (actions != null)
+                        this.filesIncluded.Add(fullPath);
+                    }
+
+                    try
+                    {
+                        object result = JObject.Parse(json);
+
+                        object processedResult = this.ProcessSettingValue(result);
+
+                        if (processedResult is JObject jObject)
                         {
-                            jObject.Remove("__actions");
-
-                            if (actions is IEnumerable enumerable)
+                            object actions = jObject["__actions"];
+                            if (actions != null)
                             {
-                                foreach (object action in enumerable)
-                                {
-                                    var actionJObject = action as JObject;
-                                    if (actionJObject != null)
-                                    {
-                                        string actionName = actionJObject["name"] as string;
-                                        string actionValue = actionJObject["value"] as string;
+                                jObject.Remove("__actions");
 
-                                        if (!String.IsNullOrWhiteSpace(actionName) && !String.IsNullOrWhiteSpace(actionValue))
+                                if (actions is IEnumerable enumerable)
+                                {
+                                    foreach (object action in enumerable)
+                                    {
+                                        var actionJObject = action as JObject;
+                                        if (actionJObject != null)
                                         {
-                                            this.PerformAction(actionName, actionValue, sourceFilePath: fullPath);
+                                            string actionName = actionJObject["name"] as string;
+                                            string actionValue = actionJObject["value"] as string;
+
+                                            if (!String.IsNullOrWhiteSpace(actionName) && !String.IsNullOrWhiteSpace(actionValue))
+                                            {
+                                                this.PerformAction(actionName, actionValue, sourceFilePath: fullPath);
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    if (processedResult is IDictionary<string, object> resultDictionary)
-                    {
-                        this.AddSettings(resultDictionary, suppressEvaluation: true);
-                    }
-                }
-                catch (ConfigurationException configEx)
-                {
-                    if (configEx.File == null)
-                    {
-                        configEx.File = fullPath;
-                        lock (this.syncObject)
+                        if (processedResult is IDictionary<string, object> resultDictionary)
                         {
-                            configEx.FileIncludeStack = this.fileIncludeStack.ToArray();
+                            this.AddSettings(resultDictionary, suppressEvaluation: true);
                         }
-                    }        
-
-                    throw configEx;
-                }
-                catch (Exception ex)
-                {
-                    string[] fileIncludeStackArray = null;
-                    lock (this.syncObject)
-                    {
-                        fileIncludeStackArray = this.fileIncludeStack.ToArray();
                     }
-                    throw new ConfigurationException($"Error in configuration file: {fullPath}: {ex.Message}", ex)
+                    catch (ConfigurationException configEx)
                     {
-                        File = fullPath,
-                        FileIncludeStack = fileIncludeStackArray
-                    };
+                        if (configEx.File == null)
+                        {
+                            configEx.File = fullPath;
+                            configEx.FileIncludeStack = fileIncludeStackBeforeThisFile;
+                        }
+
+                        throw configEx;
+                    }
+                    catch (Exception ex)
+                    {                        
+                        throw new ConfigurationException($"Error in configuration file: {fullPath}: {ex.Message}", ex)
+                        {
+                            File = fullPath,
+                            FileIncludeStack = fileIncludeStackBeforeThisFile
+                        };
+                    }
                 }
-                finally
+            }            
+            finally
+            {
+                lock (this.syncObject)
                 {
                     this.fileIncludeStack.Pop();
                 }
+            }           
+        }
+
+
+        public virtual string ObtainConfigurationFileText(string fullPath, string[] fileIncludeStack, out bool doesNotExist)
+        {
+            if (File.Exists(fullPath))
+            {
+                doesNotExist = false;
+                return File.ReadAllText(fullPath);
             }
             else
             {
-                if (throwIfNotExists)
-                {
-                    throw new ConfigurationException($"Configuration file not found: {path}")
-                    {
-                        File = fullPath
-                    };
-                }
+                doesNotExist = true;
+                return null;
             }
         }
+
 
         /// <summary>
         /// Retrieve the finalized configuration object.
