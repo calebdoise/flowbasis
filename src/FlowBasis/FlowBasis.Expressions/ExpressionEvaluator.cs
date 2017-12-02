@@ -6,26 +6,26 @@ namespace FlowBasis.Expressions
 {
     public class ExpressionEvaluator
     {
-        private ExpressionScope scope;
+        private ExpressionScope defaultScope;
 
         public ExpressionEvaluator() : this(null)
         {
         }
 
-        public ExpressionEvaluator(ExpressionScope scope)
+        public ExpressionEvaluator(ExpressionScope defaultScope)
         {
-            if (scope != null)
+            if (defaultScope != null)
             {
-                this.scope = scope;
+                this.defaultScope = defaultScope;
             }
             else
             {
-                this.scope = new ExpressionScope();
+                this.defaultScope = new ExpressionScope();
             }
         }
 
 
-        public virtual object Evaluate(string expression)
+        public virtual object Evaluate(string expression, ExpressionScope scopeToUse = null)
         {
             if (String.IsNullOrWhiteSpace(expression))
             {
@@ -35,15 +35,32 @@ namespace FlowBasis.Expressions
             var jsepParser = new JsepParser();
             var node = jsepParser.Parse(expression);
 
-            var result = this.Evaluate(node);
+            // Wrap scope to use with a nested expression evaluator that provides a temporary variable holder.
+            if (scopeToUse == null)
+            {
+                scopeToUse = this.defaultScope;
+            }
+            var nestedScopeToUse = new NestedExpressionScopeWithTempVariable(scopeToUse);
+
+            var result = this.Evaluate(node, nestedScopeToUse);
             return result;
         }
 
-        public virtual object Evaluate(JsepNode node)
+        public virtual object Evaluate(JsepNode node, ExpressionScope scopeToUse = null)
+        {
+            return this.InternalEvaluate(node, scopeToUse);
+        }
+
+        public virtual object InternalEvaluate(JsepNode node, ExpressionScope scopeToUse)
         {
             if (node == null)
             {
                 return null;
+            }
+
+            if (scopeToUse == null)
+            {
+                scopeToUse = this.defaultScope;
             }
 
             switch (node.Type)
@@ -55,61 +72,61 @@ namespace FlowBasis.Expressions
 
                 case JsepNodeType.BinaryExpression:
                     {                        
-                        object result = this.EvaluateBinaryExpression(node);
+                        object result = this.EvaluateBinaryExpression(node, scopeToUse);
                         return result;
                     }
 
                 case JsepNodeType.UnaryExpression:
                     {
-                        object result = this.EvaluateUnaryExpression(node);
+                        object result = this.EvaluateUnaryExpression(node, scopeToUse);
                         return result;
                     }
 
                 case JsepNodeType.ConditionalExpression:
                     {
-                        object result = this.EvaluateConditionalExpression(node);
+                        object result = this.EvaluateConditionalExpression(node, scopeToUse);
                         return result;
                     }
 
                 case JsepNodeType.LogicalExpression:
                     {
-                        object result = this.EvaluateLogicalExpression(node);
+                        object result = this.EvaluateLogicalExpression(node, scopeToUse);
                         return result;
                     }
 
                 case JsepNodeType.ArrayExpression:
                     {
-                        object result = this.EvaluateArrayExpression(node);
+                        object result = this.EvaluateArrayExpression(node, scopeToUse);
                         return result;
                     }
 
                 case JsepNodeType.Identifier:
                     {                        
-                        object result = this.scope.EvaluateIdentifier(node.Name);
+                        object result = scopeToUse.EvaluateIdentifier(node.Name);
                         return result;
                     }            
 
                 case JsepNodeType.Compound:
                     {
-                        object result = this.EvaluateCompoundExpression(node);
+                        object result = this.EvaluateCompoundExpression(node, scopeToUse);
                         return result;
                     }
 
                 case JsepNodeType.MemberExpression:
                     {
-                        object result = this.EvaluateMemberExpression(node);
+                        object result = this.EvaluateMemberExpression(node, scopeToUse);
                         return result;
                     }
 
                 case JsepNodeType.ThisExpression:
                     {
-                        object result = this.scope.EvaluateThis();
+                        object result = scopeToUse.EvaluateThis();
                         return result;
                     }
 
                 case JsepNodeType.CallExpression:
                     {
-                        object result = this.EvaluateCallExpression(node);
+                        object result = this.EvaluateCallExpression(node, scopeToUse);
                         return result;
                     }
 
@@ -121,15 +138,15 @@ namespace FlowBasis.Expressions
         }
 
 
-        protected virtual object EvaluateBinaryExpression(JsepNode node)
+        protected virtual object EvaluateBinaryExpression(JsepNode node, ExpressionScope scopeToUse)
         {
             if (node.Type != JsepNodeType.BinaryExpression)
             {
                 throw new Exception("Expected BinaryExpression");
             }
 
-            object left = this.Evaluate(node.Left);
-            object right = this.Evaluate(node.Right);
+            object left = this.InternalEvaluate(node.Left, scopeToUse);
+            object right = this.InternalEvaluate(node.Right, scopeToUse);
 
             bool treatBothAsIntegers = false;
             bool treatBothAsDecimals = false;
@@ -302,14 +319,14 @@ namespace FlowBasis.Expressions
         }
 
 
-        protected virtual object EvaluateUnaryExpression(JsepNode node)
+        protected virtual object EvaluateUnaryExpression(JsepNode node, ExpressionScope scopeToUse)
         {
             if (node.Type != JsepNodeType.UnaryExpression)
             {
                 throw new Exception("Expected UnaryExpression");
             }
 
-            object arg = this.Evaluate(node.Argument);
+            object arg = this.InternalEvaluate(node.Argument, scopeToUse);
 
             switch (node.Operator)
             {
@@ -342,34 +359,34 @@ namespace FlowBasis.Expressions
         }
 
 
-        protected virtual object EvaluateConditionalExpression(JsepNode node)
+        protected virtual object EvaluateConditionalExpression(JsepNode node, ExpressionScope scopeToUse)
         {
             if (node.Type != JsepNodeType.ConditionalExpression)
             {
                 throw new Exception("Expected UnaryExpression");
             }
 
-            object testResult = this.Evaluate(node.Test);
+            object testResult = this.InternalEvaluate(node.Test, scopeToUse);
             if (this.IsConsideredTrue(testResult))
             {
-                object result = this.Evaluate(node.Consequent);
+                object result = this.InternalEvaluate(node.Consequent, scopeToUse);
                 return result;
             }
             else
             {
-                object result = this.Evaluate(node.Alternate);
+                object result = this.InternalEvaluate(node.Alternate, scopeToUse);
                 return result;
             }
         }
 
-        protected virtual object EvaluateLogicalExpression(JsepNode node)
+        protected virtual object EvaluateLogicalExpression(JsepNode node, ExpressionScope scopeToUse)
         {
             if (node.Type != JsepNodeType.LogicalExpression)
             {
                 throw new Exception("Expected LogicalExpression");
             }
             
-            object left = this.Evaluate(node.Left);
+            object left = this.InternalEvaluate(node.Left, scopeToUse);
 
             if (node.Operator == "&&")
             {
@@ -381,7 +398,7 @@ namespace FlowBasis.Expressions
                 }
                 else
                 {
-                    object right = this.Evaluate(node.Right);
+                    object right = this.InternalEvaluate(node.Right, scopeToUse);
                     bool isTrue = this.IsConsideredTrue(right);
                     return isTrue;
                 }
@@ -396,7 +413,7 @@ namespace FlowBasis.Expressions
                 }
                 else
                 {
-                    object right = this.Evaluate(node.Right);
+                    object right = this.InternalEvaluate(node.Right, scopeToUse);
                     bool isTrue = this.IsConsideredTrue(right);
                     return isTrue;
                 }
@@ -408,7 +425,7 @@ namespace FlowBasis.Expressions
         }
 
 
-        protected virtual object EvaluateArrayExpression(JsepNode node)
+        protected virtual object EvaluateArrayExpression(JsepNode node, ExpressionScope scopeToUse)
         {
             if (node.Type != JsepNodeType.ArrayExpression)
             {
@@ -420,7 +437,7 @@ namespace FlowBasis.Expressions
                 var list = new List<object>(node.Elements.Count);
                 foreach (var elementNode in node.Elements)
                 {
-                    object element = this.Evaluate(elementNode);
+                    object element = this.InternalEvaluate(elementNode, scopeToUse);
                     list.Add(element);
                 }
                 return list;
@@ -432,7 +449,7 @@ namespace FlowBasis.Expressions
         }
 
 
-        protected virtual object EvaluateCompoundExpression(JsepNode node)
+        protected virtual object EvaluateCompoundExpression(JsepNode node, ExpressionScope scopeToUse)
         {
             if (node.Type != JsepNodeType.Compound)
             {
@@ -445,7 +462,7 @@ namespace FlowBasis.Expressions
                 object lastResult = null;
                 foreach (var elementNode in node.Body)
                 {
-                    lastResult = this.Evaluate(elementNode);                    
+                    lastResult = this.InternalEvaluate(elementNode, scopeToUse);                    
                 }
                 return lastResult;
             }
@@ -456,14 +473,14 @@ namespace FlowBasis.Expressions
         }
 
 
-        protected virtual object EvaluateMemberExpression(JsepNode node)
+        protected virtual object EvaluateMemberExpression(JsepNode node, ExpressionScope scopeToUse)
         {
             if (node.Type != JsepNodeType.MemberExpression)
             {
                 throw new Exception("Expected MemberExpression");
             }
 
-            var instance = this.Evaluate(node.Object);
+            var instance = this.InternalEvaluate(node.Object, scopeToUse);
 
             string memberName = null;
             if (node.Property?.Type == JsepNodeType.Identifier)
@@ -472,7 +489,7 @@ namespace FlowBasis.Expressions
             }
             else
             {
-                memberName = this.Evaluate(node.Property) as string;
+                memberName = this.InternalEvaluate(node.Property, scopeToUse) as string;
             }
 
             if (memberName == null)
@@ -497,14 +514,14 @@ namespace FlowBasis.Expressions
         }
 
 
-        protected virtual object EvaluateCallExpression(JsepNode node)
+        protected virtual object EvaluateCallExpression(JsepNode node, ExpressionScope scopeToUse)
         {
             if (node.Type != JsepNodeType.CallExpression)
             {
                 throw new Exception("Expected CallExpression");
             }
 
-            var callee = this.Evaluate(node.Callee);
+            var callee = this.InternalEvaluate(node.Callee, scopeToUse);
             if (callee is IExpressionCallable callable)
             {
                 object[] args = new object[node.Arguments?.Count ?? 0];
@@ -513,7 +530,7 @@ namespace FlowBasis.Expressions
                 {
                     for (int co = 0; co < node.Arguments.Count; co++)
                     {
-                        var argValue = this.Evaluate(node.Arguments[co]);
+                        var argValue = this.InternalEvaluate(node.Arguments[co], scopeToUse);
                         args[co] = argValue;
                     }
                 }

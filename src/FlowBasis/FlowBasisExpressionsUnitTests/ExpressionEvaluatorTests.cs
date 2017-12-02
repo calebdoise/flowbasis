@@ -173,8 +173,20 @@ namespace FlowBasisExpressionsUnitTests
 
             result = evaluator.Evaluate("file('Files/SampleFileDoesNotExist.txt').allTextIfExists");
             Assert.AreEqual(null, result);
-        }
 
+
+            // Test the nested variable holder temp scope.
+            result = evaluator.Evaluate("temp.setValue('keyName', 4.5); temp.keyName");
+            Assert.AreEqual(4.5M, result);
+
+            result = evaluator.Evaluate("temp.setValue('keyName', 4.25); temp.setValue('keyName', 2 * temp.keyName); temp.keyName");
+            Assert.AreEqual(8.5M, result);
+
+            // Ensure temp variable does not carry over to next evaluation.
+            result = evaluator.Evaluate("temp.keyName");
+            Assert.AreEqual(null, result);
+        }
+    
 
 
         public static string ProjectPath

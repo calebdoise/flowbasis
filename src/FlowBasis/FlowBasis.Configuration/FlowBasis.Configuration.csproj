@@ -2,6 +2,12 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
+    <Version>3.1.0</Version>
+    <Authors>Caleb Doise</Authors>
+    <Company>Caleb Doise</Company>
+    <Description>Configuration loader with extensible expression evaluations.</Description>
+    <PackageProjectUrl>https://github.com/calebdoise/flowbasis</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/calebdoise/flowbasis</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
