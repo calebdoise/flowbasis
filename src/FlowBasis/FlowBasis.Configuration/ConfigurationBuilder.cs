@@ -15,6 +15,16 @@ namespace FlowBasis.Configuration
         private object syncObject = new object();
         private JObject configObject = new JObject();
 
+        /// <summary>
+        /// Maintain list of files included while building settings (could allow for monitoring of those files to reload configuration).
+        /// </summary>
+        private List<string> filesIncluded = new List<string>();
+
+        /// <summary>
+        /// Maintain list of stack of file includes currently being processed to allow us to check for circular loops.
+        /// </summary>
+        private Stack<string> fileIncludeStack = new Stack<string>();
+
         private ExpressionEvaluator expressionEvaluator;
         private IDictionary<string, object> expressionIdentifiers;
 
@@ -22,7 +32,7 @@ namespace FlowBasis.Configuration
         public ConfigurationBuilder()
         {
             this.basePath = Environment.CurrentDirectory;
-
+            
             this.expressionIdentifiers = new Dictionary<string, object>();
             this.expressionEvaluator = this.SetupExpressionEvaluator();
         }
@@ -182,41 +192,59 @@ namespace FlowBasis.Configuration
 
             if (File.Exists(fullPath))
             {
-                string json = File.ReadAllText(fullPath);
-                object result = JObject.Parse(json);
-
-                object processedResult = this.ProcessSettingValue(result);
-
-                if (processedResult is JObject jObject)
+                lock (this.syncObject)
                 {
-                    object actions = jObject["__actions"];
-                    if (actions != null)
+                    if (this.fileIncludeStack.Contains(fullPath))
+                    {                        
+                        throw new Exception($"Circular loop detected in file includes: {fullPath}");
+                    }
+
+                    this.filesIncluded.Add(fullPath);
+                    this.fileIncludeStack.Push(fullPath);
+                }
+
+                try
+                {
+                    string json = File.ReadAllText(fullPath);
+                    object result = JObject.Parse(json);
+
+                    object processedResult = this.ProcessSettingValue(result);
+
+                    if (processedResult is JObject jObject)
                     {
-                        jObject.Remove("__actions");
-
-                        if (actions is IEnumerable enumerable)
+                        object actions = jObject["__actions"];
+                        if (actions != null)
                         {
-                            foreach (object action in enumerable)
-                            {
-                                var actionJObject = action as JObject;
-                                if (actionJObject != null)
-                                {
-                                    string actionName = actionJObject["name"] as string;
-                                    string actionValue = actionJObject["value"] as string;
+                            jObject.Remove("__actions");
 
-                                    if (!String.IsNullOrWhiteSpace(actionName) && !String.IsNullOrWhiteSpace(actionValue))
+                            if (actions is IEnumerable enumerable)
+                            {
+                                foreach (object action in enumerable)
+                                {
+                                    var actionJObject = action as JObject;
+                                    if (actionJObject != null)
                                     {
-                                        this.PerformAction(actionName, actionValue, sourceFilePath: fullPath);
+                                        string actionName = actionJObject["name"] as string;
+                                        string actionValue = actionJObject["value"] as string;
+
+                                        if (!String.IsNullOrWhiteSpace(actionName) && !String.IsNullOrWhiteSpace(actionValue))
+                                        {
+                                            this.PerformAction(actionName, actionValue, sourceFilePath: fullPath);
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                }
 
-                if (processedResult is IDictionary<string, object> resultDictionary)
+                    if (processedResult is IDictionary<string, object> resultDictionary)
+                    {
+                        this.AddSettings(resultDictionary, suppressEvaluation: true);
+                    }
+                }
+                finally
                 {
-                    this.AddSettings(resultDictionary, suppressEvaluation: true);
+                    this.fileIncludeStack.Pop();
                 }
             }
             else
@@ -252,6 +280,16 @@ namespace FlowBasis.Configuration
             JObject clonedConfigObject = this.GetConfigurationObject();
             T typedConfigObject = FlowBasis.Json.JsonSerializers.Default.Map<T>(clonedConfigObject);
             return typedConfigObject;
+        }
+
+        public IList<string> GetListOfFilesIncluded()
+        {
+            lock (this.syncObject)
+            {
+                var copy = new List<string>();
+                copy.AddRange(this.filesIncluded);
+                return copy;
+            }
         }
 
 

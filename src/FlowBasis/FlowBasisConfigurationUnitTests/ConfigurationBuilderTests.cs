@@ -201,6 +201,11 @@ namespace FlowBasisConfigurationUnitTests
             dynamic config = configBuilder.GetConfigurationObject();
             Assert.AreEqual("this is my imported value", config.includedFromAnotherFile);
             Assert.AreEqual("here", config.yetAnotherValue);
+
+            var filesIncluded = configBuilder.GetListOfFilesIncluded();
+            Assert.AreEqual(2, filesIncluded.Count);
+            Assert.IsTrue(filesIncluded[0].EndsWith("SampleConfigWithInclude.json"));
+            Assert.IsTrue(filesIncluded[1].EndsWith("SampleConfigToInclude.json"));
         }
 
 
