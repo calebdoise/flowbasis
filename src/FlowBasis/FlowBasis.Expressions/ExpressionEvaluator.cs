@@ -507,6 +507,11 @@ namespace FlowBasis.Expressions
                 var memberValue = instanceAsJObject[memberName];
                 return memberValue;
             }
+            else if (instance is string str)
+            {
+                var memberValue = this.EvaluateStringMember(str, memberName);
+                return memberValue;
+            }
             else
             {
                 throw new Exception("Object instance cannot provide member information.");
@@ -592,6 +597,128 @@ namespace FlowBasis.Expressions
         private bool IsNumericType(object value)
         {
             return this.IsIntegerType(value) || this.IsDecimalType(value);
+        }
+
+
+        protected virtual object EvaluateStringMember(string str, string memberName)
+        {
+            switch(memberName)
+            {
+                case "length": return str?.Length;
+
+                case "indexOf": return new StringIndexOfExpressionCallable(str, lastIndex: false);
+                case "lastIndexOf": return new StringIndexOfExpressionCallable(str, lastIndex: true);
+                case "substring": return new StringSubstringExpressionCallable(str);
+
+                // Return portion of string after the requested string.
+                case "after": return new StringAfterExpressionCallable(str, afterLast: false);
+                case "afterLast": return new StringAfterExpressionCallable(str, afterLast: true);
+            }
+
+            throw new Exception($"Member not found on string: {memberName}");
+        }
+
+
+
+        private class StringIndexOfExpressionCallable : IExpressionCallable
+        {
+            private string str;
+            private bool lastIndex;
+            
+            public StringIndexOfExpressionCallable(string str, bool lastIndex)
+            {
+                this.str = str;
+                this.lastIndex = lastIndex;
+            }
+
+            public object EvaluateCall(object[] args)
+            {
+                if (args.Length == 1)
+                {
+                    string find = args[0]?.ToString();
+                    if (find != null)
+                    {
+                        int index = this.lastIndex ? this.str.LastIndexOf(find) : this.str.IndexOf(find);
+                        return index;
+                    }
+                }
+
+                return null;
+            }
+        }
+
+
+        private class StringAfterExpressionCallable : IExpressionCallable
+        {
+            private string str;
+            private bool afterLast;
+
+            public StringAfterExpressionCallable(string str, bool afterLast)
+            {
+                this.str = str;
+                this.afterLast = afterLast;
+            }
+
+            public object EvaluateCall(object[] args)
+            {
+                if (args.Length == 1)
+                {
+                    string find = args[0]?.ToString();
+                    if (find != null)
+                    {
+                        int index = afterLast ? this.str.LastIndexOf(find) : this.str.IndexOf(find);
+                        if (index == -1)
+                        {
+                            return null;
+                        }
+                        else
+                        {
+                            string strAfter = this.str.Substring(index + find.Length);
+                            return strAfter;
+                        }                       
+                    }
+                }
+
+                return null;
+            }
+        }
+
+
+        private class StringSubstringExpressionCallable : IExpressionCallable
+        {
+            private string str;
+
+            public StringSubstringExpressionCallable(string str)
+            {
+                this.str = str;
+            }
+
+            public object EvaluateCall(object[] args)
+            {
+                if (args.Length == 1)
+                {
+                    int index = Convert.ToInt32(args[0]);
+                    string substring = this.str.Substring(index);
+                    return substring;
+                }
+                else if (args.Length == 2)
+                {
+                    int index = Convert.ToInt32(args[0]);
+                    int length = Convert.ToInt32(args[1]);
+
+                    if (index >= this.str.Length)
+                    {
+                        return String.Empty;
+                    }
+                    
+                    int finalLength = Math.Min(length, this.str.Length - index);
+
+                    string substring = this.str.Substring(index, finalLength);
+                    return substring;
+                }
+
+                return null;
+            }
         }
     }
 }

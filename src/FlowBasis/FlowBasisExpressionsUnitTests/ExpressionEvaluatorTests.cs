@@ -121,6 +121,40 @@ namespace FlowBasisExpressionsUnitTests
 
 
         [TestMethod]
+        public void Test_String_Members()
+        {
+            var evaluator = new ExpressionEvaluator();
+
+            object result = evaluator.Evaluate("('hello world').length");
+            Assert.AreEqual(11, result);
+
+            result = evaluator.Evaluate("('hello world').indexOf('o')");
+            Assert.AreEqual(4, result);
+
+            result = evaluator.Evaluate("('hello world').lastIndexOf('o')");
+            Assert.AreEqual(7, result);
+
+            result = evaluator.Evaluate("('hello world').substring(5)");
+            Assert.AreEqual(" world", result);
+
+            result = evaluator.Evaluate("('hello world').substring(5, 2)");
+            Assert.AreEqual(" w", result);
+
+            result = evaluator.Evaluate("('hello world').substring(5, 10000)");
+            Assert.AreEqual(" world", result);
+
+            result = evaluator.Evaluate("('hello world').after('el')");
+            Assert.AreEqual("lo world", result);
+
+            result = evaluator.Evaluate("('hello world').after('o')");
+            Assert.AreEqual(" world", result);
+
+            result = evaluator.Evaluate("('hello world').afterLast('o')");
+            Assert.AreEqual("rld", result);
+        }
+
+
+        [TestMethod]
         public void Test_Evaluation_With_Scope()
         {
             string projectPath = ProjectPath;
