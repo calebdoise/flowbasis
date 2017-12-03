@@ -1,8 +1,8 @@
 ﻿{
     "computedValue": "eval:: env.CommonProgramFiles",
     "computedValueSumTo8": "eval:: 3 + 5",
-    "firstSecret": "eval:: file('Files/SampleSecret.txt').firstLine",
-    "allSecretText": "fileAllText::Files\\SampleSecret.txt",
+    "firstSecret": "eval:: file('SampleSecret.txt').firstLine",
+    "allSecretText": "fileAllText::SampleSecret.txt",
     "nestedObject": {
         "childArray": [
             {

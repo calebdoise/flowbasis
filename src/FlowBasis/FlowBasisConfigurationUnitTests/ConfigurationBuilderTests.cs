@@ -61,6 +61,9 @@ namespace FlowBasisConfigurationUnitTests
             Assert.AreEqual("test", config3.nestedObject.someValue);
             Assert.AreEqual(3, config3.nestedObject.someArray.Count);
             Assert.AreEqual("blah", config3.nestedObject.someArray[2]);
+
+            Assert.AreEqual(configBuilder.BasePath, config3.theBasePath);
+            Assert.AreEqual(Path.Combine(projectPath, "Files"), config3.theActiveBasePath);
         }
 
 

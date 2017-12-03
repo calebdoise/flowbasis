@@ -3,6 +3,8 @@
     "numberValue": 34,
     "nestedObject": {
         "someValue": "test",
-        "someArray": [3,4,"blah"]
-    }
+        "someArray": [ 3, 4, "blah" ]
+    },
+    "theBasePath": "eval:: basePath",
+    "theActiveBasePath":  "eval:: activeBasePath"
 }

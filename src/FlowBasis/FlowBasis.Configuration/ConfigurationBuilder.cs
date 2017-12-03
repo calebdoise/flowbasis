@@ -51,7 +51,7 @@ namespace FlowBasis.Configuration
         protected virtual ExpressionEvaluator SetupExpressionEvaluator()
         {
             var environmentVariableMemberProvider = new EnvironmentVariableMemberProvider();
-            var fileSystemExpressionCallable = new FileSystemExpressionCallable(() => this.basePath);
+            var fileSystemExpressionCallable = new FileSystemExpressionCallable(() => this.GetActiveBasePath());
             var configMemberProvider = new ConfigMemberProvider(this);
             var jsonMemberProvider = new JsonMemberProvider();
 
@@ -68,6 +68,12 @@ namespace FlowBasis.Configuration
 
         protected virtual object GetExpressionIdentifierValue(string name)
         {
+            switch (name)
+            {
+                case "basePath": return this.basePath;
+                case "activeBasePath": return this.GetActiveBasePath();
+            }
+
             if (this.expressionIdentifiers.TryGetValue(name, out object value))
             {
                 return value;
@@ -508,7 +514,8 @@ namespace FlowBasis.Configuration
             }
             else
             {
-                fullPath = Path.Combine(basePathOverride ?? this.basePath, path);
+                string basePathToUse = basePathOverride ?? this.GetActiveBasePath();
+                fullPath = Path.Combine(basePathToUse, path);
             }
 
             return fullPath;
@@ -520,6 +527,27 @@ namespace FlowBasis.Configuration
             return new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
         }        
 
+
+        /// <summary>
+        /// Determine the base path to use based on file include being processed if possible.
+        /// </summary>
+        /// <returns></returns>
+        protected virtual string GetActiveBasePath()
+        {
+            lock (this.syncObject)
+            {
+                if (this.fileIncludeStack.Count > 0)
+                {
+                    string top = this.fileIncludeStack.Peek();
+                    string activeBasePath = Path.GetDirectoryName(top);
+                    return activeBasePath;
+                }
+                else
+                {
+                    return this.basePath;
+                }
+            }
+        }
 
 
         private class ConfigMemberProvider : IExpressionMemberProvider
