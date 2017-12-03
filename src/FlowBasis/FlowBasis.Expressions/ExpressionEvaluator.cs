@@ -146,6 +146,16 @@ namespace FlowBasis.Expressions
             }
 
             object left = this.InternalEvaluate(node.Left, scopeToUse);
+
+            if (node.Operator == "??")
+            {
+                // Null coalescing will short circuit the right-hand expression.
+                if (left != null)
+                {
+                    return left;
+                }
+            }
+
             object right = this.InternalEvaluate(node.Right, scopeToUse);
 
             bool treatBothAsIntegers = false;
@@ -309,6 +319,11 @@ namespace FlowBasis.Expressions
                 case "!=":
                     {
                         return !Object.Equals(left, right);
+                    }
+
+                case "??":
+                    {
+                        return (left != null) ? left : right;
                     }
 
                 default:

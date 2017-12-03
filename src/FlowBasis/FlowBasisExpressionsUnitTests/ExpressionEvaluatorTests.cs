@@ -220,7 +220,29 @@ namespace FlowBasisExpressionsUnitTests
             result = evaluator.Evaluate("temp.keyName");
             Assert.AreEqual(null, result);
         }
-    
+
+
+        [TestMethod]
+        public void Test_Evaluation_Of_Null_Coalesce()
+        {
+            var evaluator = new ExpressionEvaluator();
+
+            object result = evaluator.Evaluate("4 ?? 3");
+            Assert.AreEqual(4M, result);
+
+            result = evaluator.Evaluate("null ?? 3");
+            Assert.AreEqual(3M, result);
+
+            // Operator precedence in this case will just result with 40 as the answer.
+            // (for clarity in this case, people should be using parentheses anyway).
+            result = evaluator.Evaluate("40 ?? 3 + 2 ?? 4");
+            Assert.AreEqual(40M, result);
+
+            result = evaluator.Evaluate("(temp.NotSet ?? 3) * 2");
+            Assert.AreEqual(6M, result);
+        }
+
+
 
 
         public static string ProjectPath

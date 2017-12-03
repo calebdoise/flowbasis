@@ -33,11 +33,12 @@ namespace FlowBasis.Expressions
             this.binary_ops["<<"] = 8;
             this.binary_ops[">>"] = 8;
             this.binary_ops[">>>"] = 8;
-            this.binary_ops["+"] = 9;
-            this.binary_ops["-"] = 9;
-            this.binary_ops["*"] = 10;
-            this.binary_ops["/"] = 10;
-            this.binary_ops["%"] = 10;
+            this.binary_ops["??"] = 9;
+            this.binary_ops["+"] = 10;
+            this.binary_ops["-"] = 10;
+            this.binary_ops["*"] = 11;
+            this.binary_ops["/"] = 11;
+            this.binary_ops["%"] = 11;
 
             this.literals["true"] = true;
             this.literals["false"] = false;
