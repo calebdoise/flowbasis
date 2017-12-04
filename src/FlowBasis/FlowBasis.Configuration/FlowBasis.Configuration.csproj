@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
-    <Version>3.1.0</Version>
+    <Version>3.1.1</Version>
     <Authors>Caleb Doise</Authors>
     <Company>Caleb Doise</Company>
     <Description>Configuration loader with extensible expression evaluations.</Description>
