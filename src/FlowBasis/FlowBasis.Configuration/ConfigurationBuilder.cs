@@ -54,6 +54,7 @@ namespace FlowBasis.Configuration
             var fileSystemExpressionCallable = new FileSystemExpressionCallable(() => this.GetActiveBasePath());
             var configMemberProvider = new ConfigMemberProvider(this);
             var jsonMemberProvider = new JsonMemberProvider();
+            var convertMemberProvider = new ConvertMemberProvider();
 
             var evaluator = new ExpressionEvaluator(
                 new StandardExpressionScope(this, this.GetExpressionIdentifierValue));
@@ -62,6 +63,7 @@ namespace FlowBasis.Configuration
             this.expressionIdentifiers["file"] = fileSystemExpressionCallable;
             this.expressionIdentifiers["config"] = configMemberProvider;
             this.expressionIdentifiers["json"] = jsonMemberProvider;
+            this.expressionIdentifiers["convert"] = convertMemberProvider;
 
             return evaluator;
         }

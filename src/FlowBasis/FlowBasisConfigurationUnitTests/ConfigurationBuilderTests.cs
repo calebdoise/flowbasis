@@ -66,6 +66,24 @@ namespace FlowBasisConfigurationUnitTests
             Assert.AreEqual(Path.Combine(projectPath, "Files"), config3.theActiveBasePath);
         }
 
+        [TestMethod]
+        public void Test_Evaluation_With_Convert_Expressions()
+        {
+            var configBuilder = new ConfigurationBuilder();
+
+            string expectedStr = "blargy blarg";
+            string base64Utf8Str = Convert.ToBase64String(Encoding.UTF8.GetBytes(expectedStr));
+
+            // Direct addition of settings.
+            configBuilder.AddSetting("hello", "eval:: convert.toBase64Utf8('blargy blarg')");
+            configBuilder.AddSetting("blargFromBase64", $"eval:: convert.fromBase64Utf8('{base64Utf8Str}')");
+            configBuilder.AddSetting("aNumber", "eval:: convert.toNumber('43')");
+
+            dynamic config = configBuilder.GetConfigurationObject();
+            Assert.AreEqual(base64Utf8Str, config.hello);
+            Assert.AreEqual(expectedStr, config.blargFromBase64);
+            Assert.AreEqual(43M, config.aNumber);
+        }
 
         [TestMethod]
         public void Test_Evaluation_Of_File_Content_Includes()
