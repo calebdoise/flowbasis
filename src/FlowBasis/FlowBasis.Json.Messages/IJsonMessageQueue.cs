@@ -11,7 +11,6 @@ namespace FlowBasis.Json.Messages
     {
         void Publish(JsonMessageContext messageContext);
         IQueueSubscription Subscribe(Action<JsonMessageContext> messageContextCallback);
-
-        void UnsubscribeAll();
+     
     }
 }

@@ -9,14 +9,16 @@ namespace FlowBasis.SimpleQueues
     public interface ISimpleQueue
     {
         void Publish(string message);
-        IQueueSubscription Subscribe(Action<string> messageCallback);
+        Task PublishAsync(string message);
 
-        void UnsubscribeAll();
+        IQueueSubscription Subscribe(Action<string> messageCallback);
+        Task<IQueueSubscription> SubscribeAsync(Action<string> messageCallback);
     }
 
     public interface IQueueSubscription
     {
         void Unsubscribe();
+        Task UnsubscribeAsync();
     }
 
     public enum QueueMode

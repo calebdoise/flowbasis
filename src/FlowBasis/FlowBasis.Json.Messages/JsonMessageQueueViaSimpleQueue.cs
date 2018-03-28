@@ -121,13 +121,7 @@ namespace FlowBasis.Json.Messages
                 messageContextCallback(messageContext);
             });
         }
-
-
-        public void UnsubscribeAll()
-        {
-            ISimpleQueue queue = this.GetSimpleQueue();
-            queue.UnsubscribeAll();
-        }
+        
     }
 
     public class JsonMessageQueueViaSimpleQueueOptions

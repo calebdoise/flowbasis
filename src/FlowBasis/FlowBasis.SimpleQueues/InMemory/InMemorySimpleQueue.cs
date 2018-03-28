@@ -54,6 +54,14 @@ namespace FlowBasis.SimpleQueues.InMemory
             }
         }
 
+        public Task PublishAsync(string message)
+        {
+            return Task.Run(() =>
+            {
+                this.Publish(message);
+            });
+        }
+
         private void TryGetMessageFromQueue()
         {
             string message = null;
@@ -121,13 +129,14 @@ namespace FlowBasis.SimpleQueues.InMemory
             return new InMemorySimpleQueueSubscription(this, messageCallback);
         }
 
-        public void UnsubscribeAll()
+        public Task<IQueueSubscription> SubscribeAsync(Action<string> messageCallback)
         {
-            lock (this)
+            return Task.Run(() =>
             {
-                this.subscribers.Clear();
-            }
+                return this.Subscribe(messageCallback);
+            });
         }
+
 
         private class InMemorySimpleQueueSubscription : IQueueSubscription
         {
@@ -148,6 +157,13 @@ namespace FlowBasis.SimpleQueues.InMemory
                 }
             }
             
+            public Task UnsubscribeAsync()
+            {
+                return Task.Run(() =>  
+                {
+                    this.Unsubscribe();
+                });
+            }
         }
     }    
 }
