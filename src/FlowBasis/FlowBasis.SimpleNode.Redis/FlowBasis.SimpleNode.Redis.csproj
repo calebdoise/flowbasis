@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StackExchange.Redis" Version="1.2.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FlowBasis.SimpleQueues.Redis\FlowBasis.SimpleQueues.Redis.csproj" />
+    <ProjectReference Include="..\FlowBasis.SimpleQueues\FlowBasis.SimpleQueues.csproj" />
+  </ItemGroup>
+
+</Project>
