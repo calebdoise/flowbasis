@@ -1,4 +1,5 @@
 ﻿using FlowBasis.Json;
+using FlowBasis.SimpleNodes.Redis.Util;
 using FlowBasis.SimpleQueues;
 using FlowBasis.SimpleQueues.Redis;
 using StackExchange.Redis;
@@ -14,9 +15,9 @@ namespace FlowBasis.SimpleNodes.Redis
         /// <summary>
         /// Key for the set of node ids that are part of the cluster.
         /// </summary>
-        private const string SNodesKey = "s-nodes";
-        private const string SNodeDescriptorHashKey = "s-nodes-desc";
-        private const string SNodeLifeHashKey = "s-nodes-life";
+        internal const string SNodesKey = "s-nodes";
+        internal const string SNodeDescriptorHashKey = "s-nodes-desc";
+        internal const string SNodeLifeHashKey = "s-nodes-life";
 
         private SimpleNodeForRedisOptions options;
 
@@ -78,7 +79,8 @@ namespace FlowBasis.SimpleNodes.Redis
                     Id = id,
                     Profile = this.options.Profile,
                     IsPersistent = this.options.IsPersistent,
-                    StartUtcTimestamp = FlowBasis.Json.Util.TimeHelper.ToEpochMilliseconds(DateTime.UtcNow)
+                    StartUtcTimestamp = FlowBasis.Json.Util.TimeHelper.ToEpochMilliseconds(DateTime.UtcNow),
+                    Labels = this.options.Labels?.ToArray()
                 };
                 string descriptorJson = this.SerializeJson(descriptor);
                 this.db.HashSet(this.GetPropNameToUse(SNodeDescriptorHashKey), this.id, descriptorJson);
@@ -87,7 +89,7 @@ namespace FlowBasis.SimpleNodes.Redis
                     this.connection, this.GetNodeQueueName(this.id), QueueMode.Queue,
                     new RedisSimpleQueueOptions
                     {
-                        Namespace = this.options.Namespace
+                        Namespace = this.options.RedisNamespace
                     });
                 var nodeQueueSubscription = nodeQueue.Subscribe(this.NodeMessageCallback);
 
@@ -103,7 +105,7 @@ namespace FlowBasis.SimpleNodes.Redis
                             this.connection, this.GetLabelFanOutQueueName(label), QueueMode.FanOut,
                             new RedisSimpleQueueOptions
                             {
-                                Namespace = this.options.Namespace
+                                Namespace = this.options.RedisNamespace
                             });
                         var labelFanOutQueueSubscription = labelFanOutQueue.Subscribe((message) => this.LabelFanOutMessageCallback(label, message));
 
@@ -113,7 +115,7 @@ namespace FlowBasis.SimpleNodes.Redis
                             this.connection, this.GetLabelQueueName(label), QueueMode.Queue,
                             new RedisSimpleQueueOptions
                             {
-                                Namespace = this.options.Namespace
+                                Namespace = this.options.RedisNamespace
                             });
                         var labelQueueSubscription = labelQueue.Subscribe((message) => this.LabelMessageCallback(label, message));
 
@@ -170,12 +172,7 @@ namespace FlowBasis.SimpleNodes.Redis
         {
             this.db.HashSet(this.GetPropNameToUse(SNodeLifeHashKey), this.id, GetMillisecondsSince1970().ToString());
         }
-
-        private void DeleteHeartbeat()
-        {
-            this.db.HashDelete(this.GetPropNameToUse(SNodeLifeHashKey), this.id);
-        }
-
+        
 
         public void Stop()
         {
@@ -202,9 +199,8 @@ namespace FlowBasis.SimpleNodes.Redis
 
                 // TODO: Optionally cleanup queues specific to this node (it's probably better to do this separately; be sure to consider nodes that use stable ids).
 
-                this.DeleteHeartbeat();
-                this.db.HashDelete(this.GetPropNameToUse(SNodeDescriptorHashKey), this.id);
-                this.db.SetRemove(this.GetPropNameToUse(SNodesKey), this.id);                
+                var inspector = new SimpleNodeInspectorForRedis(this.connection, this.options.RedisNamespace);
+                inspector.TryCleanupStateForNode(this.id);                               
             }
         }
 
@@ -259,7 +255,7 @@ namespace FlowBasis.SimpleNodes.Redis
                 this.connection, this.GetNodeQueueName(nodeId), QueueMode.Queue,
                 new RedisSimpleQueueOptions
                 {
-                    Namespace = this.options.Namespace
+                    Namespace = this.options.RedisNamespace
                 });
             otherNodeQueue.Publish(message);
         }
@@ -275,7 +271,7 @@ namespace FlowBasis.SimpleNodes.Redis
                 this.connection, this.GetLabelQueueName(label), QueueMode.Queue,
                 new RedisSimpleQueueOptions
                 {
-                    Namespace = this.options.Namespace
+                    Namespace = this.options.RedisNamespace
                 });
             labelQueue.Publish(message);
         }
@@ -291,7 +287,7 @@ namespace FlowBasis.SimpleNodes.Redis
                 this.connection, this.GetLabelFanOutQueueName(label), QueueMode.FanOut,
                 new RedisSimpleQueueOptions
                 {
-                    Namespace = this.options.Namespace
+                    Namespace = this.options.RedisNamespace
                 });
             labelQueue.Publish(message);
         }
@@ -313,8 +309,7 @@ namespace FlowBasis.SimpleNodes.Redis
 
         private string GetPropNameToUse(string propName)
         {
-            string prefix = (this.options.Namespace != null) ? (this.options.Namespace + "--") : String.Empty;
-            return prefix + propName;
+            return RedisKeyHelper.GetPropNameToUse(propName, this.options.RedisNamespace);            
         }
 
 
@@ -356,7 +351,7 @@ namespace FlowBasis.SimpleNodes.Redis
         /// <summary>
         /// Namespace to use for scoping data properties within Redis.
         /// </summary>
-        public string Namespace { get; set; }        
+        public string RedisNamespace { get; set; }        
         
 
         /// <summary>

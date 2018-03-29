@@ -26,6 +26,8 @@ namespace FlowBasis.SimpleNodes
         /// If true, the node is assumed to be stable with a consistent id and will restart with same id if it is shutdown.
         /// </summary>
         public bool IsPersistent { get; set; }
+
+        public string[] Labels { get; set; }
     }
 
 }
