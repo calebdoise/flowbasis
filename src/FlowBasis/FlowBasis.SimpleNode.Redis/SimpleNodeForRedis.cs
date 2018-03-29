@@ -1,4 +1,5 @@
-﻿using FlowBasis.SimpleQueues;
+﻿using FlowBasis.Json;
+using FlowBasis.SimpleQueues;
 using FlowBasis.SimpleQueues.Redis;
 using StackExchange.Redis;
 using System;
@@ -14,6 +15,8 @@ namespace FlowBasis.SimpleNode.Redis
         /// Key for the set of node ids that are part of the cluster.
         /// </summary>
         private const string SNodesKey = "s-nodes";
+        private const string SNodeDescriptorHashKey = "s-nodes-desc";
+        private const string SNodeLifeHashKey = "s-nodes-life";
 
         private SimpleNodeForRedisOptions options;
 
@@ -66,7 +69,19 @@ namespace FlowBasis.SimpleNode.Redis
             {
                 this.db = this.connection.GetDatabase();
 
+                // Add to teh overall set of nodes.
                 this.db.SetAdd(this.GetPropNameToUse(SNodesKey), this.id);
+
+                // Publish descriptor.
+                var descriptor = new SimpleNodeDescriptor
+                {
+                    Id = id,
+                    Profile = this.options.Profile,
+                    IsPersistent = this.options.IsPersistent,
+                    StartUtcTimestamp = FlowBasis.Json.Util.TimeHelper.ToEpochMilliseconds(DateTime.UtcNow)
+                };
+                string descriptorJson = this.SerializeJson(descriptor);
+                this.db.HashSet(this.GetPropNameToUse(SNodeDescriptorHashKey), this.id, descriptorJson);
 
                 var nodeQueue = new RedisSimpleQueue(
                     this.connection, this.GetNodeQueueName(this.id), QueueMode.Queue,
@@ -132,7 +147,7 @@ namespace FlowBasis.SimpleNode.Redis
                         this.options.Logger($"SimpleNode heartbeat for node: {this.Id}", SimpleNodeLogLevel.Verbose);
                     }
 
-                    this.db.StringSet(this.GetPropNameToUse("s-node:" + id), GetMillisecondsSince1970().ToString());
+                    this.UpdateLastHeartbeat();
 
                     Task.Delay(this.options.HeartbeatInterval, this.stopCancellationTokenSource.Token).ContinueWith(tsk => { }).Wait();
                 }
@@ -149,6 +164,16 @@ namespace FlowBasis.SimpleNode.Redis
             {
                 this.options.Logger($"SimpleNode heartbeat stopped: {this.Id}", SimpleNodeLogLevel.Information);
             }
+        }
+
+        private void UpdateLastHeartbeat()
+        {
+            this.db.HashSet(this.GetPropNameToUse(SNodeLifeHashKey), this.id, GetMillisecondsSince1970().ToString());
+        }
+
+        private void DeleteHeartbeat()
+        {
+            this.db.HashDelete(this.GetPropNameToUse(SNodeLifeHashKey), this.id);
         }
 
 
@@ -178,6 +203,8 @@ namespace FlowBasis.SimpleNode.Redis
                 // TODO: Optionally cleanup queues specific to this node (it's probably better to do this separately; be sure to consider nodes that use stable ids).
 
                 this.db.SetRemove(this.GetPropNameToUse(SNodesKey), this.id);
+                this.db.HashDelete(this.GetPropNameToUse(SNodeDescriptorHashKey), this.id);
+                this.DeleteHeartbeat();
             }
         }
 
@@ -310,9 +337,16 @@ namespace FlowBasis.SimpleNode.Redis
             public ISimpleQueue Queue { get; private set; }
             public IQueueSubscription QueueSubscription { get; private set; }
         }
+
+
+        protected virtual string SerializeJson(object obj)
+        {
+            string json = FlowBasis.Json.JObject.Stringify(obj);
+            return json;
+        }
     }
 
-    public class SimpleNodeForRedisOptions
+    public class SimpleNodeForRedisOptions : SimpleNodeOptions
     {
         public SimpleNodeForRedisOptions()
         {
@@ -322,33 +356,8 @@ namespace FlowBasis.SimpleNode.Redis
         /// <summary>
         /// Namespace to use for scoping data properties within Redis.
         /// </summary>
-        public string Namespace { get; set; }
-
-        /// <summary>
-        /// Optional: Can be set to fixed value for single-instance nodes with well-known ids. If not set, a dynamic id will be created.
-        /// </summary>
-        public string Id { get; set; }
-
-        /// <summary>
-        /// Description of node that will be registered with central management repository for describing the node.
-        /// </summary>
-        public string Description { get; set; }
-
-        /// <summary>
-        /// Optional: Node can be labeled with specific labels. Messages can be broadcast to active nodes matching a particular classification.
-        /// </summary>
-        public List<string> Labels { get; set; }
-
-
-        public Action<string> NodeMessageCallback { get; set; }
-        public LabelMessageCallback LabelMessageCallback { get; set; }
-        public LabelMessageCallback LabelFanOutMessageCallback { get; set; }
-
-
-        /// <summary>
-        /// Optional: Custom logger which will be handed logging messages.
-        /// </summary>
-        public Action<string, SimpleNodeLogLevel> Logger { get; set; }
+        public string Namespace { get; set; }        
+        
 
         /// <summary>
         /// Amount of time to pause between heartbeats to node coordinator.
@@ -356,15 +365,6 @@ namespace FlowBasis.SimpleNode.Redis
         public TimeSpan HeartbeatInterval { get; set; }
     }
 
-
-    public delegate void LabelMessageCallback(string label, string message);
-
-    public enum SimpleNodeLogLevel
-    {
-        Verbose = 0,
-        Information = 1,
-        Warning = 2,
-        Error = 3,
-        Critical = 4
-    }
+    
+    
 }

@@ -9,6 +9,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\FlowBasis.Json\FlowBasis.Json.csproj" />
+    <ProjectReference Include="..\FlowBasis.SimpleNode\FlowBasis.SimpleNode.csproj" />
     <ProjectReference Include="..\FlowBasis.SimpleQueues.Redis\FlowBasis.SimpleQueues.Redis.csproj" />
     <ProjectReference Include="..\FlowBasis.SimpleQueues\FlowBasis.SimpleQueues.csproj" />
   </ItemGroup>
