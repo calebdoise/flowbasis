@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace FlowBasis.SimpleNode.Redis
+namespace FlowBasis.SimpleNodes.Redis
 {
     public class SimpleNodeForRedis
     {
@@ -202,9 +202,9 @@ namespace FlowBasis.SimpleNode.Redis
 
                 // TODO: Optionally cleanup queues specific to this node (it's probably better to do this separately; be sure to consider nodes that use stable ids).
 
-                this.db.SetRemove(this.GetPropNameToUse(SNodesKey), this.id);
-                this.db.HashDelete(this.GetPropNameToUse(SNodeDescriptorHashKey), this.id);
                 this.DeleteHeartbeat();
+                this.db.HashDelete(this.GetPropNameToUse(SNodeDescriptorHashKey), this.id);
+                this.db.SetRemove(this.GetPropNameToUse(SNodesKey), this.id);                
             }
         }
 

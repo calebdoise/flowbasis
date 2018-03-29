@@ -37,11 +37,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowBasis.Configuration", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowBasisConfigurationUnitTests", "FlowBasisConfigurationUnitTests\FlowBasisConfigurationUnitTests.csproj", "{BC7B7D00-FBA9-416C-8E5B-8FF72A4ED392}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowBasis.SimpleNode", "FlowBasis.SimpleNode\FlowBasis.SimpleNode.csproj", "{F5928A9D-B963-4875-975B-736648BEFA95}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowBasis.SimpleNodes", "FlowBasis.SimpleNodes\FlowBasis.SimpleNodes.csproj", "{F5928A9D-B963-4875-975B-736648BEFA95}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SimpleNode", "SimpleNode", "{7F51D7E6-9AAA-4400-AC1F-320358A471C5}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SimpleNodes", "SimpleNodes", "{7F51D7E6-9AAA-4400-AC1F-320358A471C5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowBasis.SimpleNode.Redis", "FlowBasis.SimpleNode.Redis\FlowBasis.SimpleNode.Redis.csproj", "{5B164E71-1776-43BB-A913-0D3D4ABC640B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowBasis.SimpleNodes.Redis", "FlowBasis.SimpleNodes.Redis\FlowBasis.SimpleNodes.Redis.csproj", "{5B164E71-1776-43BB-A913-0D3D4ABC640B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

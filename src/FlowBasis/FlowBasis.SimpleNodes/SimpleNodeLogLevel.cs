@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace FlowBasis.SimpleNode
+namespace FlowBasis.SimpleNodes
 {
 
     public enum SimpleNodeLogLevel
