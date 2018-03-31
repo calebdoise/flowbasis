@@ -17,7 +17,7 @@ namespace FlowBasis.SimpleNodes.Redis
         /// </summary>
         internal const string SNodesKey = "s-nodes";
         internal const string SNodeDescriptorHashKey = "s-nodes-desc";
-        internal const string SNodeLifeHashKey = "s-nodes-life";
+        internal const string SNodeLifeHashKey = "s-nodes-life";        
 
         private SimpleNodeForRedisOptions options;
 
