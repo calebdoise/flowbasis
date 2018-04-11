@@ -27,7 +27,7 @@ namespace FlowBasis.SimpleNodes
         /// </summary>
         public bool IsPersistent { get; set; }
 
-        public string[] Labels { get; set; }
+        public string[] Tags { get; set; }
     }
 
 }

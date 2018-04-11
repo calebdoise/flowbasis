@@ -80,7 +80,7 @@ namespace FlowBasis.SimpleNodes.Redis
                     Profile = this.options.Profile,
                     IsPersistent = this.options.IsPersistent,
                     StartUtcTimestamp = FlowBasis.Json.Util.TimeHelper.ToEpochMilliseconds(DateTime.UtcNow),
-                    Labels = this.options.Tags?.ToArray()
+                    Tags = this.options.Tags?.ToArray()
                 };
                 string descriptorJson = this.SerializeJson(descriptor);
                 this.db.HashSet(this.GetPropNameToUse(SNodeDescriptorHashKey), this.id, descriptorJson);
@@ -304,12 +304,12 @@ namespace FlowBasis.SimpleNodes.Redis
 
         private string GetTagFanOutQueueName(string tag)
         {
-            return "s-node-label-fan:" + tag;
+            return "s-node-tag-fan:" + tag;
         }
 
         private string GetTagQueueName(string tag)
         {
-            return "s-node-label:" + tag;
+            return "s-node-tag:" + tag;
         }
 
         private string GetPropNameToUse(string propName)
