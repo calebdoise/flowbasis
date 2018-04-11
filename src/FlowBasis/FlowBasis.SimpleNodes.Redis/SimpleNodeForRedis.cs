@@ -31,8 +31,8 @@ namespace FlowBasis.SimpleNodes.Redis
 
         private QueueState nodeQueueState;
 
-        private Dictionary<string, QueueState> labelFanOutListenerMap;
-        private Dictionary<string, QueueState> labelListenerMap;
+        private Dictionary<string, QueueState> tagFanOutListenerMap;
+        private Dictionary<string, QueueState> tagListenerMap;
 
         public SimpleNodeForRedis(ConnectionMultiplexer connection, SimpleNodeForRedisOptions options = null)
         {
@@ -58,9 +58,9 @@ namespace FlowBasis.SimpleNodes.Redis
             {
                 this.options.Logger($"SimpleNode started: {this.id}", SimpleNodeLogLevel.Information);
 
-                if (this.options.Labels != null)
+                if (this.options.Tags != null)
                 {
-                    this.options.Logger($"SimpleNode labels for {this.id}: {String.Join(", ", this.options.Labels)}", SimpleNodeLogLevel.Information);
+                    this.options.Logger($"SimpleNode tags for {this.id}: {String.Join(", ", this.options.Tags)}", SimpleNodeLogLevel.Information);
                 }
             }
 
@@ -80,7 +80,7 @@ namespace FlowBasis.SimpleNodes.Redis
                     Profile = this.options.Profile,
                     IsPersistent = this.options.IsPersistent,
                     StartUtcTimestamp = FlowBasis.Json.Util.TimeHelper.ToEpochMilliseconds(DateTime.UtcNow),
-                    Labels = this.options.Labels?.ToArray()
+                    Labels = this.options.Tags?.ToArray()
                 };
                 string descriptorJson = this.SerializeJson(descriptor);
                 this.db.HashSet(this.GetPropNameToUse(SNodeDescriptorHashKey), this.id, descriptorJson);
@@ -95,31 +95,31 @@ namespace FlowBasis.SimpleNodes.Redis
 
                 this.nodeQueueState = new QueueState(nodeQueue, nodeQueueSubscription);
 
-                this.labelFanOutListenerMap = new Dictionary<string, QueueState>();
-                this.labelListenerMap = new Dictionary<string, QueueState>();
-                if (this.options.Labels != null)
+                this.tagFanOutListenerMap = new Dictionary<string, QueueState>();
+                this.tagListenerMap = new Dictionary<string, QueueState>();
+                if (this.options.Tags != null)
                 {
-                    foreach (string label in this.options.Labels)
+                    foreach (string tag in this.options.Tags)
                     {
-                        var labelFanOutQueue = new RedisSimpleQueue(
-                            this.connection, this.GetLabelFanOutQueueName(label), QueueMode.FanOut,
+                        var tagFanOutQueue = new RedisSimpleQueue(
+                            this.connection, this.GetTagFanOutQueueName(tag), QueueMode.FanOut,
                             new RedisSimpleQueueOptions
                             {
                                 Namespace = this.options.RedisNamespace
                             });
-                        var labelFanOutQueueSubscription = labelFanOutQueue.Subscribe((message) => this.LabelFanOutMessageCallback(label, message));
+                        var tagFanOutQueueSubscription = tagFanOutQueue.Subscribe((message) => this.TagFanOutMessageCallback(tag, message));
 
-                        this.labelFanOutListenerMap[label] = new QueueState(labelFanOutQueue, labelFanOutQueueSubscription);
+                        this.tagFanOutListenerMap[tag] = new QueueState(tagFanOutQueue, tagFanOutQueueSubscription);
 
-                        var labelQueue = new RedisSimpleQueue(
-                            this.connection, this.GetLabelQueueName(label), QueueMode.Queue,
+                        var tagQueue = new RedisSimpleQueue(
+                            this.connection, this.GetTagQueueName(tag), QueueMode.Queue,
                             new RedisSimpleQueueOptions
                             {
                                 Namespace = this.options.RedisNamespace
                             });
-                        var labelQueueSubscription = labelQueue.Subscribe((message) => this.LabelMessageCallback(label, message));
+                        var tagQueueSubscription = tagQueue.Subscribe((message) => this.TagMessageCallback(tag, message));
 
-                        this.labelListenerMap[label] = new QueueState(labelQueue, labelQueueSubscription);
+                        this.tagListenerMap[tag] = new QueueState(tagQueue, tagQueueSubscription);
                     }
                 }
             }
@@ -178,29 +178,34 @@ namespace FlowBasis.SimpleNodes.Redis
         {
             if (this.startHasBeenCalled && !this.stopHasBeenCalled)
             {
-                this.stopHasBeenCalled = true;
-                this.stopCancellationTokenSource.Cancel();
-
-                if (this.nodeQueueState != null)
+                try
                 {
-                    this.nodeQueueState.QueueSubscription.Unsubscribe();
-                    this.nodeQueueState = null;
-                }
+                    this.stopHasBeenCalled = true;
+                    this.stopCancellationTokenSource.Cancel();
 
-                foreach (var queueState in this.labelFanOutListenerMap)
+                    if (this.nodeQueueState != null)
+                    {
+                        this.nodeQueueState.QueueSubscription.Unsubscribe();
+                        this.nodeQueueState = null;
+                    }
+
+                    foreach (var queueState in this.tagFanOutListenerMap)
+                    {
+                        queueState.Value.QueueSubscription.Unsubscribe();
+                    }
+
+                    foreach (var queueState in this.tagListenerMap)
+                    {
+                        queueState.Value.QueueSubscription.Unsubscribe();
+                    }
+
+                    // TODO: Optionally cleanup queues specific to this node (it's probably better to do this separately; be sure to consider nodes that use stable ids).
+                }
+                finally
                 {
-                    queueState.Value.QueueSubscription.Unsubscribe();
+                    var inspector = new SimpleNodeInspectorForRedis(this.connection, this.options.RedisNamespace);
+                    inspector.TryCleanupStateForNode(this.id);
                 }
-
-                foreach (var queueState in this.labelListenerMap)
-                {
-                    queueState.Value.QueueSubscription.Unsubscribe();
-                }
-
-                // TODO: Optionally cleanup queues specific to this node (it's probably better to do this separately; be sure to consider nodes that use stable ids).
-
-                var inspector = new SimpleNodeInspectorForRedis(this.connection, this.options.RedisNamespace);
-                inspector.TryCleanupStateForNode(this.id);                               
             }
         }
 
@@ -218,29 +223,29 @@ namespace FlowBasis.SimpleNodes.Redis
             }
         }
 
-        private void LabelMessageCallback(string label, string message)
+        private void TagMessageCallback(string tag, string message)
         {
             if (this.options.Logger != null)
             {
-                this.options.Logger($"Received Label Message ({label}): {message}", SimpleNodeLogLevel.Verbose);
+                this.options.Logger($"Received Tag Message ({tag}): {message}", SimpleNodeLogLevel.Verbose);
             }
 
-            if (this.options.LabelMessageCallback != null)
+            if (this.options.TagMessageCallback != null)
             {
-                this.options.LabelMessageCallback(label, message);
+                this.options.TagMessageCallback(tag, message);
             }
         }
 
-        private void LabelFanOutMessageCallback(string label, string message)
+        private void TagFanOutMessageCallback(string tag, string message)
         {
             if (this.options.Logger != null)
             {
-                this.options.Logger($"Received Label Fan-Out Message ({label}): {message}", SimpleNodeLogLevel.Verbose);
+                this.options.Logger($"Received Tag Fan-Out Message ({tag}): {message}", SimpleNodeLogLevel.Verbose);
             }
 
-            if (this.options.LabelFanOutMessageCallback != null)
+            if (this.options.TagFanOutMessageCallback != null)
             {
-                this.options.LabelFanOutMessageCallback(label, message);
+                this.options.TagFanOutMessageCallback(tag, message);
             }
         }
 
@@ -261,14 +266,14 @@ namespace FlowBasis.SimpleNodes.Redis
         }
 
         /// <summary>
-        /// Only one label member will see the message.
+        /// Only one tag member will see the message.
         /// </summary>
-        /// <param name="label"></param>
+        /// <param name="tag"></param>
         /// <param name="message"></param>
-        public void PublishToSingleLabelMember(string label, string message)
+        public void PublishToSingleTagMember(string tag, string message)
         {
             var labelQueue = new RedisSimpleQueue(
-                this.connection, this.GetLabelQueueName(label), QueueMode.Queue,
+                this.connection, this.GetTagQueueName(tag), QueueMode.Queue,
                 new RedisSimpleQueueOptions
                 {
                     Namespace = this.options.RedisNamespace
@@ -277,14 +282,14 @@ namespace FlowBasis.SimpleNodes.Redis
         }
 
         /// <summary>
-        /// All actively listening members of the label wil see the message. If no nodes are actively listening, then no nodes will ever see the message.
+        /// All actively listening members of the tag wil see the message. If no nodes are actively listening, then no nodes will ever see the message.
         /// </summary>
-        /// <param name="label"></param>
+        /// <param name="tag"></param>
         /// <param name="message"></param>
-        public void BroadcastToLabel(string label, string message)
+        public void BroadcastToTag(string tag, string message)
         {
             var labelQueue = new RedisSimpleQueue(
-                this.connection, this.GetLabelFanOutQueueName(label), QueueMode.FanOut,
+                this.connection, this.GetTagFanOutQueueName(tag), QueueMode.FanOut,
                 new RedisSimpleQueueOptions
                 {
                     Namespace = this.options.RedisNamespace
@@ -297,14 +302,14 @@ namespace FlowBasis.SimpleNodes.Redis
             return "s-node:" + nodeId;
         }
 
-        private string GetLabelFanOutQueueName(string label)
+        private string GetTagFanOutQueueName(string tag)
         {
-            return "s-node-label-fan:" + label;
+            return "s-node-label-fan:" + tag;
         }
 
-        private string GetLabelQueueName(string label)
+        private string GetTagQueueName(string tag)
         {
-            return "s-node-label:" + label;
+            return "s-node-label:" + tag;
         }
 
         private string GetPropNameToUse(string propName)

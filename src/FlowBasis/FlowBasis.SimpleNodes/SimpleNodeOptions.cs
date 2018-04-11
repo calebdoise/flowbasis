@@ -22,9 +22,9 @@ namespace FlowBasis.SimpleNodes
         public bool IsPersistent { get; set; }
 
         /// <summary>
-        /// Optional: Node can be labeled with specific labels. Messages can be broadcast to active nodes matching a particular classification.
+        /// Optional: Node can be labeled with specific tags. Messages can be broadcast to active nodes matching a particular tag.
         /// </summary>
-        public List<string> Labels { get; set; }
+        public List<string> Tags { get; set; }
 
 
         /// <summary>
@@ -32,13 +32,13 @@ namespace FlowBasis.SimpleNodes
         /// </summary>
         public NodeMessageCallback NodeMessageCallback { get; set; }
         /// <summary>
-        /// LabelMessageCallback is called for any messages sent to one of the labels to which the node belongs.
+        /// TagMessageCallback is called for any messages sent to one of the tags to which the node belongs.
         /// </summary>
-        public LabelMessageCallback LabelMessageCallback { get; set; }
+        public TagMessageCallback TagMessageCallback { get; set; }
         /// <summary>
-        /// LabelFanOutMessageCallback is called for any messages broadcast to all nodes .
+        /// TagFanOutMessageCallback is called for any messages broadcast to all nodes with a particular tag.
         /// </summary>
-        public LabelMessageCallback LabelFanOutMessageCallback { get; set; }
+        public TagMessageCallback TagFanOutMessageCallback { get; set; }
 
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace FlowBasis.SimpleNodes
 
     public delegate void NodeMessageCallback(string message);
 
-    public delegate void LabelMessageCallback(string label, string message);
+    public delegate void TagMessageCallback(string tag, string message);
 
     public delegate void SimpleNodeLogCallback(string message, SimpleNodeLogLevel level);
 }
