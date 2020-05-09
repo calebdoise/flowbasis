@@ -83,6 +83,32 @@ namespace FlowBasisConfigurationUnitTests
             Assert.AreEqual(base64Utf8Str, config.hello);
             Assert.AreEqual(expectedStr, config.blargFromBase64);
             Assert.AreEqual(43M, config.aNumber);
+
+            // Test with --addJson command-line arg option.
+            configBuilder = new ConfigurationBuilder();
+
+            string argJson = FlowBasis.Json.JObject.Stringify(
+                new Dictionary<string, object>()
+                {
+                    { 
+                        "sampleObj",
+                        new Dictionary<string, object>()
+                        {
+                            { "keyExample", "someValue" }   
+                        }
+                    }
+                });
+            string argJsonBase64Utf8Str = Convert.ToBase64String(Encoding.UTF8.GetBytes(argJson));
+
+            configBuilder.AddCommandLineArgs(
+                new[] 
+                {
+                    "--addJson", 
+                    $"eval::convert.fromBase64Utf8('{argJsonBase64Utf8Str}')" 
+                });
+
+            config = configBuilder.GetConfigurationObject();
+            Assert.AreEqual("someValue", config.sampleObj.keyExample);
         }
 
         [TestMethod]

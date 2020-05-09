@@ -138,6 +138,7 @@ namespace FlowBasis.Configuration
         {
             const string argNamePrefix = "--";
             const string addJsonFileArgName = "addJsonFile";
+            const string addJsonArgName = "addJson";
 
             string lastArgName = null;
 
@@ -161,6 +162,15 @@ namespace FlowBasis.Configuration
                         if (lastArgName == addJsonFileArgName)
                         {
                             this.AddJsonFile(value);
+                        }
+                        else if (lastArgName == addJsonArgName)
+                        {
+                            FlowBasis.Json.JObject extraSettingsJObject = null;
+                            if (value != null)
+                            {
+                                extraSettingsJObject = FlowBasis.Json.JObject.Parse(value) as FlowBasis.Json.JObject;
+                            }
+                            this.AddSettings(extraSettingsJObject, suppressEvaluation: false);
                         }
                         else
                         {
