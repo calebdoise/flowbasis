@@ -94,7 +94,8 @@ namespace FlowBasisConfigurationUnitTests
                         "sampleObj",
                         new Dictionary<string, object>()
                         {
-                            { "keyExample", "someValue" }   
+                            { "keyExample", "someValue" },
+                            { "c", "eval:: 4 + 2" }
                         }
                     }
                 });
@@ -109,6 +110,35 @@ namespace FlowBasisConfigurationUnitTests
 
             config = configBuilder.GetConfigurationObject();
             Assert.AreEqual("someValue", config.sampleObj.keyExample);
+            Assert.AreEqual(6, config.sampleObj.c);
+
+            // Test with --addJson command-line arg option where option is already an object.
+            configBuilder = new ConfigurationBuilder();
+
+            argJson = FlowBasis.Json.JObject.Stringify(
+                new Dictionary<string, object>()
+                {
+                    {
+                        "sampleObj2",
+                        new Dictionary<string, object>()
+                        {
+                            { "keyExample2", "someValue2" },
+                            { "c2", "eval:: 4 + 3" }
+                        }
+                    }
+                });
+            argJsonBase64Utf8Str = Convert.ToBase64String(Encoding.UTF8.GetBytes(argJson));
+
+            configBuilder.AddCommandLineArgs(
+                new[]
+                {
+                    "--addJson",
+                    $"eval::json.parse(convert.fromBase64Utf8('{argJsonBase64Utf8Str}'))"
+                });
+
+            config = configBuilder.GetConfigurationObject();
+            Assert.AreEqual("someValue2", config.sampleObj2.keyExample2);
+            Assert.AreEqual(7, config.sampleObj2.c2);
         }
 
         [TestMethod]

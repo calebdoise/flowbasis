@@ -157,20 +157,24 @@ namespace FlowBasis.Configuration
                 {
                     if (lastArgName != null)
                     {
-                        string value = this.ProcessSettingValue(arg) as string;
+                        object valueObj = this.ProcessSettingValue(arg);
+                        string value = valueObj as string;
 
                         if (lastArgName == addJsonFileArgName)
                         {
                             this.AddJsonFile(value);
                         }
                         else if (lastArgName == addJsonArgName)
-                        {
-                            FlowBasis.Json.JObject extraSettingsJObject = null;
-                            if (value != null)
-                            {
-                                extraSettingsJObject = FlowBasis.Json.JObject.Parse(value) as FlowBasis.Json.JObject;
+                        {                            
+                            if (valueObj is IDictionary<string, object> valueObjDictionary)
+                            {                                
+                                this.AddSettings(valueObjDictionary, suppressEvaluation: false);
                             }
-                            this.AddSettings(extraSettingsJObject, suppressEvaluation: false);
+                            else if (value != null)
+                            {
+                                var extraSettingsJObject = FlowBasis.Json.JObject.Parse(value) as FlowBasis.Json.JObject;
+                                this.AddSettings(extraSettingsJObject, suppressEvaluation: false);
+                            }                            
                         }
                         else
                         {
