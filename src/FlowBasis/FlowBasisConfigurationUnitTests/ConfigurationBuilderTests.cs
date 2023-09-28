@@ -10,7 +10,7 @@ using System.IO;
 
 namespace FlowBasisConfigurationUnitTests
 {
-    
+
     [TestClass]
     public class ConfigurationBuilderTests
     {
@@ -28,7 +28,7 @@ namespace FlowBasisConfigurationUnitTests
             Assert.AreEqual("world", config.hello);
             Assert.AreEqual(42, config.blarg);
             Assert.AreEqual(true, config.test);
-            Assert.AreEqual(null, config.doesNotExist);
+            Assert.IsNull(config.doesNotExist);
 
             // Command-line arg processing.
             configBuilder.AddCommandLineArgs(new[] { "--hello", "value1", "--v2", "value2", "--f1", "--v3", "value3", "--f2" });
@@ -37,7 +37,7 @@ namespace FlowBasisConfigurationUnitTests
             Assert.AreEqual("value1", config2.hello);
             Assert.AreEqual(42, config2.blarg);
             Assert.AreEqual(true, config2.test);
-            Assert.AreEqual(null, config2.doesNotExist);
+            Assert.IsNull(config2.doesNotExist);
             Assert.AreEqual("value2", config2.v2);
             Assert.AreEqual(true, config2.f1);
             Assert.AreEqual("value3", config2.v3);
@@ -52,7 +52,7 @@ namespace FlowBasisConfigurationUnitTests
             Assert.AreEqual("another new value", config3.hello);
             Assert.AreEqual(42, config3.blarg);
             Assert.AreEqual(true, config3.test);
-            Assert.AreEqual(null, config3.doesNotExist);
+            Assert.IsNull(config3.doesNotExist);
             Assert.AreEqual("value2", config3.v2);
             Assert.AreEqual(true, config3.f1);
             Assert.AreEqual("value3", config3.v3);
@@ -90,7 +90,7 @@ namespace FlowBasisConfigurationUnitTests
             string argJson = FlowBasis.Json.JObject.Stringify(
                 new Dictionary<string, object>()
                 {
-                    { 
+                    {
                         "sampleObj",
                         new Dictionary<string, object>()
                         {
@@ -102,10 +102,10 @@ namespace FlowBasisConfigurationUnitTests
             string argJsonBase64Utf8Str = Convert.ToBase64String(Encoding.UTF8.GetBytes(argJson));
 
             configBuilder.AddCommandLineArgs(
-                new[] 
+                new[]
                 {
-                    "--addJson", 
-                    $"eval::convert.fromBase64Utf8('{argJsonBase64Utf8Str}')" 
+                    "--addJson",
+                    $"eval::convert.fromBase64Utf8('{argJsonBase64Utf8Str}')"
                 });
 
             config = configBuilder.GetConfigurationObject();
@@ -149,7 +149,7 @@ namespace FlowBasisConfigurationUnitTests
             // Direct addition of settings.
             var configBuilder = new ConfigurationBuilder();
             configBuilder.BasePath = projectPath;
-            
+
             configBuilder.AddSetting("secret", "fileFirstLine::Files\\SampleSecret.txt");
             configBuilder.AddSetting("secretIfExists", "ifExistsFileFirstLine::Files\\SampleSecret.txt");
             configBuilder.AddSetting("secretDoesNotExist", "ifExistsFileFirstLine::DoesNotExist.txt");
@@ -158,8 +158,8 @@ namespace FlowBasisConfigurationUnitTests
             dynamic config = configBuilder.GetConfigurationObject();
             Assert.AreEqual("SampleSecretLine1", config.secret);
             Assert.AreEqual("SampleSecretLine1", config.secretIfExists);
-            Assert.AreEqual(null, config.secretDoesNotExist);
-            Assert.AreEqual(null, config.secret2DoesNotExist);
+            Assert.IsNull(config.secretDoesNotExist);
+            Assert.IsNull(config.secret2DoesNotExist);
 
 
             // Through the command-line.
@@ -268,11 +268,11 @@ namespace FlowBasisConfigurationUnitTests
         public void Test_Json_Includes()
         {
             string projectPath = ProjectPath;
-            
+
             var configBuilder = new ConfigurationBuilder();
             configBuilder.BasePath = projectPath;
 
-            configBuilder.AddJsonFile("Files/SampleConfigWithInclude.json");                       
+            configBuilder.AddJsonFile("Files/SampleConfigWithInclude.json");
 
             dynamic config = configBuilder.GetConfigurationObject();
             Assert.AreEqual("this is my imported value", config.includedFromAnotherFile);
@@ -281,7 +281,7 @@ namespace FlowBasisConfigurationUnitTests
             var filesIncluded = configBuilder.GetListOfFilesIncluded();
             Assert.AreEqual(2, filesIncluded.Count);
             Assert.IsTrue(filesIncluded[0].EndsWith("SampleConfigWithInclude.json"));
-            Assert.IsTrue(filesIncluded[1].EndsWith("SampleConfigToInclude.json"));           
+            Assert.IsTrue(filesIncluded[1].EndsWith("SampleConfigToInclude.json"));
         }
 
         [TestMethod]
@@ -329,11 +329,11 @@ namespace FlowBasisConfigurationUnitTests
 
             Assert.IsNotNull(caughtEx);
             Assert.IsTrue(caughtEx.Message.Contains("String evaluation failed"));
-            Assert.IsInstanceOfType(caughtEx, typeof(ConfigurationException));            
+            Assert.IsInstanceOfType(caughtEx, typeof(ConfigurationException));
 
             var configEx = (ConfigurationException)caughtEx;
             Assert.IsTrue(configEx.File.Contains("StrEvalError1.json"));
-            Assert.AreEqual("eval:: (3 + 4", configEx.StringExpression);            
+            Assert.AreEqual("eval:: (3 + 4", configEx.StringExpression);
             Assert.AreEqual(4, configEx.PropertyPath.Length);
             Assert.AreEqual("root", configEx.PropertyPath[0]);
             Assert.AreEqual("blarg", configEx.PropertyPath[1]);
@@ -352,7 +352,7 @@ namespace FlowBasisConfigurationUnitTests
         public static string ProjectPath
         {
             get
-            { 
+            {
                 var codeBase = typeof(ConfigurationBuilderTests).Assembly.CodeBase;
                 string assemblyPath = new Uri(codeBase).LocalPath;
                 string assemblyFolder = Path.GetDirectoryName(assemblyPath);
@@ -366,7 +366,7 @@ namespace FlowBasisConfigurationUnitTests
                         return projectFolderPath;
                     }
                 }
-                
+
                 throw new Exception("Project folder not found.");
             }
         }

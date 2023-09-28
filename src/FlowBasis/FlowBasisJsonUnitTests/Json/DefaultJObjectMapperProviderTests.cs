@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FlowBasisJsonUnitTests.Json
 {
-    
+
     [TestClass]
     public class DefaultJObjectMapperProviderTests
     {
@@ -28,7 +28,33 @@ namespace FlowBasisJsonUnitTests.Json
             var result = jsonSerializer.Parse<TestObject>(json);
             Assert.AreEqual("Abc", result.SomeStr);
         }
-      
+
+        [TestMethod]
+        public void Test_RegisterJObjectMapperForType_AfterMappingHasAlreadyOccurred()
+        {
+            DefaultJObjectMapperProvider mapperProvider = new DefaultJObjectMapperProvider();
+
+            var jsonSerializer = new JsonSerializationService(() => new JObjectRootMapper(mapperProvider));
+
+            // TestObject should get serialized and deserialzied in the default way.
+            string json = jsonSerializer.Stringify(new TestObject() { SomeStr = "Abc" });
+            Assert.AreEqual("{\"someStr\":\"Abc\"}", json);
+
+            var result = jsonSerializer.Parse<TestObject>(json);
+            Assert.AreEqual("Abc", result.SomeStr);
+
+            // Now we register a custom mapping and ensure it gets used.
+            mapperProvider.RegisterJObjectMapperForType(typeof(TestObject), new TestObjectMapper());
+
+            // TestObject should get converted into reversed case string when serialized with custom mapper.
+            json = jsonSerializer.Stringify(new TestObject() { SomeStr = "Abc" });
+            Assert.AreEqual("\"aBC\"", json);
+
+            // And it should be deserialized back into TestObject from a string.
+            result = jsonSerializer.Parse<TestObject>(json);
+            Assert.AreEqual("Abc", result.SomeStr);
+        }
+
 
         public class TestObject
         {
@@ -36,7 +62,7 @@ namespace FlowBasisJsonUnitTests.Json
         }
 
         public class TestObjectMapper : IJObjectMapper
-        {               
+        {
             public object ToJObject(object instance, IJObjectRootMapper rootMapper)
             {
                 TestObject testObject = (TestObject)instance;
@@ -57,7 +83,7 @@ namespace FlowBasisJsonUnitTests.Json
                 return sb.ToString();
             }
 
-            public object  FromJObject(object jObject, Type targetType, IJObjectRootMapper rootMapper)
+            public object FromJObject(object jObject, Type targetType, IJObjectRootMapper rootMapper)
             {
                 string str = (string)jObject;
 
@@ -75,7 +101,7 @@ namespace FlowBasisJsonUnitTests.Json
                 }
 
                 return new TestObject() { SomeStr = sb.ToString() };
-            }              
+            }
         }
     }
 
