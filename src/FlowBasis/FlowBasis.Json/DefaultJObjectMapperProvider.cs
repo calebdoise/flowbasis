@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Collections;
 using FlowBasis.Json.Mappers;
+using System.Collections.Concurrent;
 
 namespace FlowBasis.Json
 {
@@ -11,32 +12,33 @@ namespace FlowBasis.Json
     {
         private static IdentityMapper s_identityMapper = new IdentityMapper();
 
-        private static Type s_typeOfObject = typeof(object);
-        private static Type s_typeOfGenericIList = typeof(IList<>);
-        private static Type s_typeOfGenericList = typeof(List<>);
-        private static Type s_typeOfGenericIDictionary = typeof(IDictionary<,>);
-        private static Type s_typeOfGenericDictionary = typeof(Dictionary<,>);
-        private static Type s_typeOfGenericIEnumerable = typeof(IEnumerable<>);
-        private static Type s_typeOfGenericNullable = typeof(Nullable<>);
-        private static Type s_typeOfString = typeof(string);
-        private static Type s_typeOfDecimal = typeof(decimal);
-        private static Type s_typeOfDateTime = typeof(DateTime);
+        private static readonly Type s_typeOfObject = typeof(object);
+        private static readonly Type s_typeOfGenericIList = typeof(IList<>);
+        private static readonly Type s_typeOfGenericIDictionary = typeof(IDictionary<,>);
+        private static readonly Type s_typeOfGenericDictionary = typeof(Dictionary<,>);
+        private static readonly Type s_typeOfGenericIEnumerable = typeof(IEnumerable<>);
+        private static readonly Type s_typeOfGenericNullable = typeof(Nullable<>);
+        private static readonly Type s_typeOfString = typeof(string);
+        private static readonly Type s_typeOfDecimal = typeof(decimal);
+        private static readonly Type s_typeOfDateTime = typeof(DateTime);
 
-        private DefaultJObjectMapperProviderOptions options;
-        private DefaultClassMappingOptions defaultClassMappingOptions;
+        private readonly DefaultJObjectMapperProviderOptions options;
+        private readonly DefaultClassMappingOptions defaultClassMappingOptions;
 
-        private Dictionary<Type, IJObjectMapper> typeToCustomMapperMap = new Dictionary<Type, IJObjectMapper>();
+        private readonly ConcurrentDictionary<Type, IJObjectMapper> typeToJObjectMapperMap;
+        private readonly ConcurrentDictionary<TargetTypeAndJObjectType, IJObjectMapper> typeAndJObjectTypeToJObjectMapperMap;
 
-        private JObjectPrimitiveMapper primitiveMapper = new JObjectPrimitiveMapper();
-        private IJObjectMapper stringMapper;
-        private JObjectArrayMapper arrayMapper = new JObjectArrayMapper();
-        private JObjectListMapper listMapper = new JObjectListMapper();
-        private JObjectDictionaryMapper dictionaryMapper = new JObjectDictionaryMapper();
-        private JObjectEnumMapper enumMapper = new JObjectEnumMapper();
+        private readonly JObjectPrimitiveMapper primitiveMapper = new JObjectPrimitiveMapper();
+        private readonly IJObjectMapper stringMapper;
+        private readonly JObjectArrayMapper arrayMapper = new JObjectArrayMapper();
+        private readonly JObjectListMapper listMapper = new JObjectListMapper();
+        private readonly JObjectDictionaryMapper dictionaryMapper = new JObjectDictionaryMapper();
+        private readonly JObjectEnumMapper enumMapper = new JObjectEnumMapper();
 
+        private readonly Dictionary<Type, IJObjectMapper> typeToCustomMapperMap = new Dictionary<Type, IJObjectMapper>();
 
         public DefaultJObjectMapperProvider() : this(null)
-        {            
+        {
         }
 
         public DefaultJObjectMapperProvider(DefaultJObjectMapperProviderOptions options)
@@ -48,14 +50,21 @@ namespace FlowBasis.Json
             {
                 this.defaultClassMappingOptions = new DefaultClassMappingOptions();
             }
-            
-            this.stringMapper = this.primitiveMapper;            
+
+            this.stringMapper = this.primitiveMapper;
+
+            this.typeToJObjectMapperMap = new ConcurrentDictionary<Type, IJObjectMapper>();
+            this.typeAndJObjectTypeToJObjectMapperMap = new ConcurrentDictionary<TargetTypeAndJObjectType, IJObjectMapper>();
         }
 
 
         public void RegisterJObjectMapperForType(Type type, IJObjectMapper mapper)
         {
             this.typeToCustomMapperMap[type] = mapper;
+
+            // We clear the cached types since the new custom mapping renders the cache stale.
+            this.typeToJObjectMapperMap.Clear();
+            this.typeAndJObjectTypeToJObjectMapperMap.Clear();
         }
 
 
@@ -69,6 +78,18 @@ namespace FlowBasis.Json
         }
 
         private IJObjectMapper ResovleJObjectMapperForInstanceType(Type type)
+        {
+            if (this.typeToJObjectMapperMap.TryGetValue(type, out var jObjectMapper))
+            {
+                return jObjectMapper;
+            }
+
+            jObjectMapper = this.ResovleJObjectMapperForInstanceTypeInner(type);
+            this.typeToJObjectMapperMap.AddOrUpdate(type, jObjectMapper, (_, mapper) => mapper);
+            return jObjectMapper;
+        }
+
+        private IJObjectMapper ResovleJObjectMapperForInstanceTypeInner(Type type)
         {
             IJObjectMapper registeredMapper;
             if (this.typeToCustomMapperMap.TryGetValue(type, out registeredMapper))
@@ -94,9 +115,9 @@ namespace FlowBasis.Json
             }
             else if (type.IsPrimitive || type == s_typeOfDecimal || type == s_typeOfDateTime)
             {
-                return this.primitiveMapper;                
+                return this.primitiveMapper;
             }
-            else if (typeof(IDictionary).IsAssignableFrom(type) 
+            else if (typeof(IDictionary).IsAssignableFrom(type)
                 || typeof(IDictionary<string, object>).IsAssignableFrom(type)
                 || typeof(IDictionary<string, string>).IsAssignableFrom(type))
             {
@@ -128,10 +149,26 @@ namespace FlowBasis.Json
         public IJObjectMapper ResovleJObjectMapperForJObject(object jObject, Type targetType)
         {
             if (jObject == null)
+            {
                 throw new ArgumentNullException("jObject");
+            }
 
             Type jObjectType = jObject.GetType();
 
+            var key = new TargetTypeAndJObjectType(targetType, jObjectType);
+
+            if (this.typeAndJObjectTypeToJObjectMapperMap.TryGetValue(key, out var jObjectMapper))
+            {
+                return jObjectMapper;
+            }
+
+            jObjectMapper = this.ResovleJObjectMapperForJObjectInner(jObject, jObjectType, targetType);
+            this.typeAndJObjectTypeToJObjectMapperMap.AddOrUpdate(key, jObjectMapper, (type, mapper) => mapper);
+            return jObjectMapper;
+        }
+
+        private IJObjectMapper ResovleJObjectMapperForJObjectInner(object jObject, Type jObjectType, Type targetType)
+        {
             IJObjectMapper registeredMapper;
             if (this.typeToCustomMapperMap.TryGetValue(targetType, out registeredMapper))
             {
@@ -146,9 +183,13 @@ namespace FlowBasis.Json
             bool targetTypeIsGeneric = targetType.IsGenericType;
             Type genericTypeDefinition;
             if (targetTypeIsGeneric)
+            {
                 genericTypeDefinition = targetType.GetGenericTypeDefinition();
+            }
             else
+            {
                 genericTypeDefinition = null;
+            }
 
             if (targetTypeIsGeneric && genericTypeDefinition == s_typeOfGenericNullable)
             {
@@ -160,8 +201,8 @@ namespace FlowBasis.Json
                 return this.stringMapper;
             }
             else if (targetType.IsPrimitive || targetType == s_typeOfDecimal || targetType == s_typeOfDateTime)
-            {               
-                return this.primitiveMapper;                
+            {
+                return this.primitiveMapper;
             }
             else if (targetType.IsArray)
             {
@@ -229,6 +270,37 @@ namespace FlowBasis.Json
             public object FromJObject(object jObject, Type targetType, IJObjectRootMapper rootMapper)
             {
                 return jObject;
+            }
+        }
+
+        /// <summary>
+        /// NET45 does not have tuples. This class exists to be used as a dictionary key.
+        /// </summary>
+        private class TargetTypeAndJObjectType
+        {
+            public TargetTypeAndJObjectType(Type targetType, Type jObjectType)
+            {
+                this.TargetType = targetType;
+                this.JObjectType = jObjectType;
+            }
+
+            public Type TargetType { get; }
+
+            public Type JObjectType { get; }
+
+            public override bool Equals(object obj)
+            {
+                return obj is TargetTypeAndJObjectType type &&
+                       EqualityComparer<Type>.Default.Equals(this.TargetType, type.TargetType) &&
+                       EqualityComparer<Type>.Default.Equals(this.JObjectType, type.JObjectType);
+            }
+
+            public override int GetHashCode()
+            {
+                int hashCode = 908088354;
+                hashCode = hashCode * -1521134295 + EqualityComparer<Type>.Default.GetHashCode(this.TargetType);
+                hashCode = hashCode * -1521134295 + EqualityComparer<Type>.Default.GetHashCode(this.JObjectType);
+                return hashCode;
             }
         }
     }

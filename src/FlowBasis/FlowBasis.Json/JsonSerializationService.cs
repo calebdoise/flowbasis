@@ -7,19 +7,25 @@ using System.Text;
 namespace FlowBasis.Json
 {
     public class JsonSerializationService : IJsonSerializationService
-    {        
-        private Func<IJObjectRootMapper> rootMapperFactory;
-        private int? maxDepth = null;
+    {
+        private readonly Func<IJObjectRootMapper> rootMapperFactory;
+        private readonly Newtonsoft.Json.JsonSerializer serializer;
 
         public JsonSerializationService(Func<IJObjectRootMapper> rootMapperFactory)
         {
             this.rootMapperFactory = rootMapperFactory;
-        }        
+            this.serializer = new Newtonsoft.Json.JsonSerializer();
+            serializer.FloatFormatHandling = Newtonsoft.Json.FloatFormatHandling.String;
+            serializer.MaxDepth = this.MaxDepth;
+            serializer.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.None;
+            serializer.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+            serializer.DateFormatHandling = Newtonsoft.Json.DateFormatHandling.MicrosoftDateFormat;
+        }
 
         public int? MaxDepth
         {
-            get { return this.maxDepth; }
-            set { this.maxDepth = value; }
+            get => this.serializer.MaxDepth;
+            set => this.serializer.MaxDepth = value;
         }
 
         public string Stringify(object value)
@@ -27,16 +33,9 @@ namespace FlowBasis.Json
             var rootMapper = this.rootMapperFactory();
             object jObject = rootMapper.ToJObject(value);
 
-            Newtonsoft.Json.JsonSerializer serializer = new Newtonsoft.Json.JsonSerializer();
-            serializer.FloatFormatHandling = Newtonsoft.Json.FloatFormatHandling.String;
-            serializer.MaxDepth = this.maxDepth;
-            serializer.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.None;
-            serializer.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
-            serializer.DateFormatHandling = Newtonsoft.Json.DateFormatHandling.MicrosoftDateFormat;
-
             using (var sw = new StringWriter())
             {
-                serializer.Serialize(sw, jObject);
+                this.serializer.Serialize(sw, jObject);
                 string json = sw.ToString();
                 return json;
             }
